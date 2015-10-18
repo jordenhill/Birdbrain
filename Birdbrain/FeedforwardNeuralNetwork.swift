@@ -113,17 +113,15 @@ public class FeedfowardNeuralNetwork {
     //Perform a backward propagation on the network.
     public func backpropagate(input: [Float], target: [Float], learningRate: Float) {
         //Compute a forward pass, hold z values and activations
-        let activation = input
         var activations = [[Float]]()
         var nablaB = [[Float]]()
         var nablaW = [[Float]]()
-        activations.append(activation)
         
         if (useMetal == 0) {
-            (nablaB, nablaW) = backprop(activations, target: target)
+            (nablaB, nablaW) = backprop(input, target: target)
         }
         else {
-            (nablaB, nablaW) = mtl_backprop(activations, target: target)
+            (nablaB, nablaW) = mtl_backprop(input, target: target)
         }
         
         //Update weights
@@ -133,22 +131,23 @@ public class FeedfowardNeuralNetwork {
         }
     }
     
-    private func backprop(var activations: [[Float]], target: [Float]) -> ([[Float]], [[Float]]){
+    private func backprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
         //Build namblaW and namblaB
-        var nablaW = [[Float]]()
-        var nablaB = [[Float]]()
+        var deltaW = [[Float]]()
+        var deltaB = [[Float]]()
         var delta = [Float]()
         var i = 1
         var m: Int32
         var n: Int32
         var zVals = [[Float]]()
-        var activation = activations[0]
+        var activations = [[Float]]()
+        var activation = input
         
         for w in weights {
-            nablaW.append([Float](count: w.count, repeatedValue: 0.0))
+            deltaW.append([Float](count: w.count, repeatedValue: 0.0))
         }
         for b in biases {
-            nablaB.append([Float](count: b.count, repeatedValue: 0.0))
+            deltaB.append([Float](count: b.count, repeatedValue: 0.0))
         }
         
             
@@ -186,8 +185,8 @@ public class FeedfowardNeuralNetwork {
                 y: reluPrime(zVals[zVals.endIndex - 1]))
         }
         
-        nablaB[nablaB.endIndex - 1] = delta
-        nablaW[nablaW.endIndex - 1] = formMatrix(activations[activations.endIndex - 2], B: delta)
+        deltaB[deltaB.endIndex - 1] = delta
+        deltaW[deltaW.endIndex - 1] = formMatrix(activations[activations.endIndex - 2], B: delta)
         
         for (var l = 2; l < numLayers; l++) {
             let z = zVals[zVals.endIndex - l]
@@ -205,14 +204,14 @@ public class FeedfowardNeuralNetwork {
                     m: Int32(sizes[l - 2]), n: Int32(sizes[l - 1]), x: reluPrime(z))
             }
             
-            nablaB[nablaB.endIndex - l] = delta
-            nablaW[nablaW.endIndex - l] = formMatrix(delta, B: activations[activations.endIndex - l - 1])
+            deltaB[deltaB.endIndex - l] = delta
+            deltaW[deltaW.endIndex - l] = formMatrix(delta, B: activations[activations.endIndex - l])
         }
         
-        return (nablaB, nablaW)
+        return (deltaB, deltaW)
     }
     
-    private func mtl_backprop(var activations: [[Float]], target: [Float]) -> ([[Float]], [[Float]]){
+    private func mtl_backprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
         //Build namblaW and namblaB
         var nablaW = [[Float]]()
         var nablaB = [[Float]]()
@@ -221,7 +220,8 @@ public class FeedfowardNeuralNetwork {
         var m: Int32
         var n: Int32
         var zVals = [[Float]]()
-        var activation = activations[0]
+        var activation = input
+        var activations = [[Float]]()
         
         for w in weights {
             nablaW.append([Float](count: w.count, repeatedValue: 0.0))
@@ -284,7 +284,7 @@ public class FeedfowardNeuralNetwork {
             }
             
             nablaB[nablaB.endIndex - l] = delta
-            nablaW[nablaW.endIndex - l] = formMatrix(delta, B: activations[activations.endIndex - l - 1])
+            nablaW[nablaW.endIndex - l] = formMatrix(delta, B: activations[activations.endIndex - l])
         }
         
         return (nablaB, nablaW)

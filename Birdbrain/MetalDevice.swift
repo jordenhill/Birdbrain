@@ -1,10 +1,6 @@
-//
 //  MetalDevice.swift
 //  Birdbrain
-//
-//  Created by Jorden Hill on 10/9/15.
-//  Copyright © 2015 Jorden Hill. All rights reserved.
-//
+//  A collection of swift functions that will send a message to perform the called metal function.
 
 import Foundation
 import Metal

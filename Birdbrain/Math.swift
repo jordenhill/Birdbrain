@@ -1,9 +1,7 @@
 //  Math.swift
 //  Birdbrain
-//
-//  Created by Jorden Hill on 9/29/15.
-//  Copyright © 2015 Jorden Hill. All rights reserved.
-//
+// A collection of mathematical functions that are useful for the neural network. Written using the
+// Accelerate framework to optimize speed.
 
 import Accelerate
 
