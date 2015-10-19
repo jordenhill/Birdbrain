@@ -119,15 +119,19 @@ public class FeedfowardNeuralNetwork {
         
         if (useMetal == 0) {
             (nablaB, nablaW) = backprop(input, target: target)
+            
+            for l in Range(start:0, end: numLayers - 1) {
+                weights[l] = sub(weights[l], B: scalMul(nablaW[l], y: learningRate))
+                biases[l] = sub(biases[l], B: scalMul(nablaB[l], y: learningRate))
+            }
         }
         else {
             (nablaB, nablaW) = mtl_backprop(input, target: target)
-        }
-        
-        //Update weights
-        for l in Range(start:0, end: numLayers - 1) {
-            weights[l] = sub(weights[l], B: scalMul(nablaW[l], y: learningRate))
-            biases[l] = sub(biases[l], B: scalMul(nablaB[l], y: learningRate))
+            
+            for l in Range(start:0, end: numLayers - 1) {
+                weights[l] = mtlSub(weights[l], y: scalMul(nablaW[l], y: learningRate))
+                biases[l] = mtlSub(biases[l], y: scalMul(nablaB[l], y: learningRate))
+            }
         }
     }
     
