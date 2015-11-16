@@ -31,7 +31,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "19"
             endingLineNumber = "19"
-            landmarkName = "initMetal()"
+            landmarkName = "mtlSigmoid(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -63,7 +63,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "53"
             endingLineNumber = "53"
-            landmarkName = "mtlMul(_:y:)"
+            landmarkName = "mtlScalMul(_:c:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -109,7 +109,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "48"
             endingLineNumber = "48"
-            landmarkName = "mtlAdd(_:y:)"
+            landmarkName = "mtlSub(_:y:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

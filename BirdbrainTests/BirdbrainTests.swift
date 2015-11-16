@@ -13,7 +13,10 @@ class BirdbrainTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
+        let netSize = [2,3,2]
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 1)
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        
     }
     
     override func tearDown() {
@@ -24,12 +27,13 @@ class BirdbrainTests: XCTestCase {
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+        
     }
     
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measureBlock {
-            // Put the code you want to measure the time of here.
+            
         }
     }
     
