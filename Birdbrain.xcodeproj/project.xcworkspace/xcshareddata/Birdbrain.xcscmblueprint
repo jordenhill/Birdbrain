@@ -1,0 +1,32 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "01EE283EB2BED033A6C80B8A552BB00407E24C6C",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "b0990143-8e56-0e62-8c2d-ce57b7db7bff" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "b0990143-8e56-0e62-8c2d-ce57b7db7bff" : 0,
+    "01EE283EB2BED033A6C80B8A552BB00407E24C6C" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "5B8B9664-5EC2-4D1E-8156-43F12A180F93",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "b0990143-8e56-0e62-8c2d-ce57b7db7bff" : "",
+    "01EE283EB2BED033A6C80B8A552BB00407E24C6C" : "Birdbrain\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "Birdbrain",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "Birdbrain.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/jordenhill\/Birdbrain.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "01EE283EB2BED033A6C80B8A552BB00407E24C6C"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/jordenhill\/Markdowncompiler",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "b0990143-8e56-0e62-8c2d-ce57b7db7bff"
+    }
+  ]
+}

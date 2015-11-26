@@ -16,6 +16,7 @@
 		BC32C8EF1BC7979B00D92D94 /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */; };
 		BC32C8F11BC798AC00D92D94 /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */; };
 		BC32C8F31BC79EE700D92D94 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
+		BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 		BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = MetalFunctions.metal; sourceTree = "<group>"; };
 		BC32C8F21BC79EE600D92D94 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		BC7478E31BC4D561007EE74A /* Birdbrainplayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Birdbrainplayground.playground; sourceTree = "<group>"; };
+		BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BirdbrainMathTest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +105,7 @@
 			isa = PBXGroup;
 			children = (
 				BC0090421BBB22710086F758 /* BirdbrainTests.swift */,
+				BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */,
 				BC0090441BBB22710086F758 /* Info.plist */,
 			);
 			path = BirdbrainTests;
@@ -227,6 +230,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC0090431BBB22710086F758 /* BirdbrainTests.swift in Sources */,
+				BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

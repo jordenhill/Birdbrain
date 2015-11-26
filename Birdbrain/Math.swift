@@ -45,6 +45,12 @@ public func scalMul(x: [Float], var y: Float) -> [Float] {
 }
 
 //Multiply a vextor x by a vector y.
+/*
+     x        y      results
+   [ 1      [ 1       [ 1
+     2    *   2     =   4
+     3 ]      3 ]       9 ]
+*/
 public func mul(x: [Float], y: [Float]) -> [Float] {
     var results = [Float](count: x.count, repeatedValue: 0.0)
     vDSP_vmul(x, 1, y, 1, &results, 1, vDSP_Length(x.count))
@@ -52,7 +58,13 @@ public func mul(x: [Float], y: [Float]) -> [Float] {
     return results
 }
 
-//Multiply a matrix A of double values by a vector x of double values.
+//Multiply a matrix A of float values by a vector x of float values.
+/*
+        A          x     results
+    [ 1 2 3      [ 1     [ 14
+      4 5 6    *   2   =   32
+      7 8 9 ]      3 ]     50 ]
+*/
 public func mvMul(A: [Float], m: Int32, n: Int32, x: [Float]) -> [Float] {
     var results = [Float](count: Int(m), repeatedValue: 0.0)
     
@@ -71,7 +83,6 @@ public func div(x: [Float], y: [Float]) -> [Float] {
 }
 
 //Perform an elementwise exponentiation on a vector x
-
 public func exp(x: [Float]) -> [Float] {
     var results = [Float](count: x.count, repeatedValue: 0.0)
     vvexpf(&results, x, [Int32(x.count)])
@@ -88,7 +99,6 @@ public func tanh(x: [Float]) -> [Float] {
 }
 
 //Square function for each element
-
 public func square(x: [Float]) -> [Float] {
     var results = [Float](count: x.count, repeatedValue: 0.0)
     vDSP_vsq(x, 1, &results, 1, vDSP_Length(x.count))
@@ -102,15 +112,6 @@ public func neg(x: [Float]) -> [Float] {
     vDSP_vneg(x, 1, &results, 1, vDSP_Length(x.count))
     
     return results
-}
-
-public func dot(x: [Float], y: [Float]) -> Float {
-    precondition(x.count == y.count, "Vectors must have equal count")
-    
-    var result: Float = 0.0
-    vDSP_dotpr(x, 1, y, 1, &result, vDSP_Length(x.count))
-    
-    return result
 }
 
 public func trans(A: [Float], m: Int, n: Int) -> [Float] {

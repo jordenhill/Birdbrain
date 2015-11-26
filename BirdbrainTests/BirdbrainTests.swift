@@ -10,31 +10,50 @@ import XCTest
 @testable import Birdbrain
 
 class BirdbrainTests: XCTestCase {
+    let netSize: [Int] = [2,3,1]
+    let input: [Float] = [1.0, 0.0]
     
-    override func setUp() {
-        super.setUp()
-        let netSize = [2,3,2]
+    func testCreations() {
+        XCTAssertNotNil(testSigmoidCreation(), "Sigmoid pass")
+        XCTAssertNotNil(testMetalSigmoidCreation(), "Metal sigmoid pass")
+        XCTAssertNotNil(testTanCreation(), "Tan pass")
+        //XCTAssertNotNil(testMetalSigmoidCreation(), "Metal tan pass")
+        //XCTAssertNotNil(testReluCreation(), "ReLu pass")
+        //XCTAssertNotNil(testMetalReluCreation(), "Metal ReLu pass")
+    }
+    
+    func testFeedForward() {
+        
+    }
+    
+    func testSigmoidCreation() -> FeedfowardNeuralNetwork {
         let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 1)
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-        
+        return net;
     }
     
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
+    func testMetalSigmoidCreation() -> FeedfowardNeuralNetwork {
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 1)
+        return net;
     }
     
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        
+    func testTanCreation() -> FeedfowardNeuralNetwork {
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 2)
+        return net;
     }
     
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            
-        }
+    func testMetalTanCreation() -> FeedfowardNeuralNetwork {
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 2)
+        return net;
     }
     
+    
+    func testReluCreation() -> FeedfowardNeuralNetwork {
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 3)
+        return net;
+    }
+    
+    func testMetalReluCreation() -> FeedfowardNeuralNetwork {
+        let net = FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 3)
+        return net;
+    }
 }

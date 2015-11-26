@@ -21,7 +21,7 @@ kernel void tanh(device float *x [[buffer(0)]], device float *y [[buffer(1)]],
 
 kernel void relu(device float *x [[buffer(0)]], device float *y [[buffer(1)]],
                  uint id [[thread_position_in_grid]]) {
-    y[id] = x[id] < 0.0 ? 0.0 : x[id];
+    y[id] = max(x[id], 0.0);
 }
 
 kernel void sigmoid_prime(device float *x[[buffer(0)]], device float *y [[buffer(1)]],

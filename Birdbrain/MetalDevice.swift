@@ -56,7 +56,7 @@ func mtlScalMul(v: [Float], c: Float) -> [Float] {
 }
 
 func performActivationFunction(function_name: String, input: [Float]) -> [Float] {
-    var (device, library, commandBuffer, commandEncoder) = initMetal()
+    let (device, library, commandBuffer, commandEncoder) = initMetal()
     let sigmoidFunction = library.newFunctionWithName(function_name)
     let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
     sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
@@ -96,7 +96,7 @@ func performActivationFunction(function_name: String, input: [Float]) -> [Float]
 }
 
 func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Float]) -> [Float] {
-    var (device, library, commandBuffer, commandEncoder) = initMetal()
+    let (device, library, commandBuffer, commandEncoder) = initMetal()
     let sigmoidFunction = library.newFunctionWithName(functionName)
     let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
     sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
@@ -139,7 +139,7 @@ func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Flo
 }
 
 func performVecScalFunction(functionName: String, vector: [Float], scalar: Float) -> [Float] {
-    var (device, library, commandBuffer, commandEncoder) = initMetal()
+    let (device, library, commandBuffer, commandEncoder) = initMetal()
     let sigmoidFunction = library.newFunctionWithName(functionName)
     let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
     sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
