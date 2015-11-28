@@ -113,7 +113,6 @@ public class FeedfowardNeuralNetwork {
     //Perform a backward propagation on the network.
     public func backpropagate(input: [Float], target: [Float], learningRate: Float) {
         //Compute a forward pass, hold z values and activations
-        let activations = [[Float]]()
         var nablaB = [[Float]]()
         var nablaW = [[Float]]()
         
