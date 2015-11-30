@@ -113,7 +113,6 @@ public class FeedfowardNeuralNetwork {
     //Perform a backward propagation on the network.
     public func backpropagate(input: [Float], target: [Float], learningRate: Float) {
         //Compute a forward pass, hold z values and activations
-        var activations = [[Float]]()
         var nablaB = [[Float]]()
         var nablaW = [[Float]]()
         
@@ -294,6 +293,17 @@ public class FeedfowardNeuralNetwork {
         return (nablaB, nablaW)
     }
     
+    //Combine and average weights in two neural nets
+    public func combine(otherNet: FeedfowardNeuralNetwork) {
+        if((numLayers == otherNet.numLayers) && (sizes == otherNet.sizes)) {
+            var newWeights = [[Float]]()
+            for (w1, w2) in zip(weights, otherNet.weights) {
+                newWeights.append(scalMul(add(w1, y: w2), y: 0.5))
+            }
+            weights = newWeights
+        }
+    }
+    
     //Rectified Linear Unit (y = max(0,x))
     private func relu(x: [Float]) -> [Float] {
         let activation: [Float] = x.map({($0 < 0.0) ? 0.0 : $0})
@@ -323,6 +333,7 @@ public class FeedfowardNeuralNetwork {
         return val
     }
     
+    //Get the cost derivative
     public func costDerivative(output: [Float], y: [Float]) -> [Float] {
         return sub(output, B: y)
     }

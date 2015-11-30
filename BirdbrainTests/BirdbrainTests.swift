@@ -10,27 +10,32 @@ import XCTest
 @testable import Birdbrain
 
 class BirdbrainTests: XCTestCase {
+    let netSize: [Int] = [2,3,1]
+    let input: [Float] = [1.0, 0.0]
     
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testSigmoidCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 1), "Creation of sigmoid network failed")
     }
     
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
+    func testMetalSigmoidCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 1), "Creation of metal sigmoid network failed")
     }
     
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+    func testTanCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 2), "Cretion of Tangent network failed")
     }
     
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            // Put the code you want to measure the time of here.
-        }
+    func testMetalTanCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 2), "Creation of metal tangent network failed")
     }
+    
+    func testReluCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 3), "Creation of relu network failed")
+    }
+    
+    func testMetalReluCreation() {
+        XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 3), "Creation of metal relu network failed")
+    }
+    
     
 }
