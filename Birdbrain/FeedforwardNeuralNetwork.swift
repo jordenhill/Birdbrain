@@ -34,7 +34,7 @@ public class FeedfowardNeuralNetwork {
         //Prepare the weights
         for (x, y) in zip(sizes[0..<sizes.endIndex - 1], sizes[1..<sizes.endIndex]) {
             var w = [Float](count: x*y, repeatedValue: 0)
-            w = w.map() { _ in rand_gauss()}
+            w = w.map() { _ in initRand(x)}
             weights.append(w)
         }
     }
@@ -120,16 +120,16 @@ public class FeedfowardNeuralNetwork {
             (nablaB, nablaW) = backprop(input, target: target)
             
             for l in Range(start:0, end: numLayers - 1) {
-                weights[l] = sub(weights[l], B: scalMul(nablaW[l], y: learningRate))
-                biases[l] = sub(biases[l], B: scalMul(nablaB[l], y: learningRate))
+                weights[l] = sub(weights[l], B: mul(nablaW[l], y: learningRate))
+                biases[l] = sub(biases[l], B: mul(nablaB[l], y: learningRate))
             }
         }
         else {
             (nablaB, nablaW) = mtl_backprop(input, target: target)
             
             for l in Range(start:0, end: numLayers - 1) {
-                weights[l] = mtlSub(weights[l], y: scalMul(nablaW[l], y: learningRate))
-                biases[l] = mtlSub(biases[l], y: scalMul(nablaB[l], y: learningRate))
+                weights[l] = mtlSub(weights[l], y: mul(nablaW[l], y: learningRate))
+                biases[l] = mtlSub(biases[l], y: mul(nablaB[l], y: learningRate))
             }
         }
     }
@@ -298,44 +298,10 @@ public class FeedfowardNeuralNetwork {
         if((numLayers == otherNet.numLayers) && (sizes == otherNet.sizes)) {
             var newWeights = [[Float]]()
             for (w1, w2) in zip(weights, otherNet.weights) {
-                newWeights.append(scalMul(add(w1, y: w2), y: 0.5))
+                newWeights.append(mul(add(w1, y: w2), y: 0.5))
             }
             weights = newWeights
         }
-    }
-    
-    //Rectified Linear Unit (y = max(0,x))
-    private func relu(x: [Float]) -> [Float] {
-        let activation: [Float] = x.map({($0 < 0.0) ? 0.0 : $0})
-        return activation
-    }
-    
-    //Sigmoid function (1 / (1 + e^-x))
-    private func sigmoid(x: [Float]) -> [Float] {
-        let ones = [Float](count: x.count, repeatedValue: 1.0)
-        let z: [Float] =  div(ones, y: (scalAdd(1.0, x: exp(neg(x)))))
-        return z
-    }
-    
-    //Sigmoid prime (sigmoid(x) * (1 - sigmoid(x))
-    public func sigmoidPrime(x: [Float]) -> [Float] {
-        return mul(sigmoid(x), y: scalAdd(1.0, x: neg(sigmoid(x))))
-    }
-    
-    //Hyperbolic tangent prime (1 - tanh(x)^2)
-    public func tanhPrime(x: [Float]) -> [Float] {
-        return scalAdd(1, x: neg(square(tanh(x))))
-    }
-    
-    //ReLU prime (x > 0 = 1, x <= 0 = 0)
-    public func reluPrime(x: [Float]) -> [Float] {
-        let val: [Float] = x.map({($0 <= 0.0) ? 0.0 : 1})
-        return val
-    }
-    
-    //Get the cost derivative
-    public func costDerivative(output: [Float], y: [Float]) -> [Float] {
-        return sub(output, B: y)
     }
     
 }

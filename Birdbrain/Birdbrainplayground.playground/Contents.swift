@@ -7,21 +7,24 @@ import Metal
 
 var str = "Hello, playground"
 
-struct Vector2 // matches float2 in Metal
-{
-    var x0: Float = 0.0
-    var x1: Float = 0.0
+let x = [Float](count: 5, repeatedValue: 0.0)
+let dim = 5
+/*
+[0,0,0,0,0,0
+ 0,0,0,0,0,0
+ 0,0,0,0,0,0
+ 0,0,0,0,0,0
+ 0,0,0,0,0,0]
+
+*/
+var s = [Float](count: (x.count + 1) * dim, repeatedValue: 0.0)
+let t: [Float] = [1, 3, 2, 4]
+
+
+func softmax(z: [Float]) -> [Float] {
+    let x = sum(exp(z))
+    let y = [Float](count: z.count, repeatedValue: x)
+    return div(exp(z), y: y)
 }
 
-let sizes = [1000,1000,10]
-var x = [Float](count: sizes[0], repeatedValue: 0.0)
-x = x.map({_ in rand_gauss()})
-var ann = FeedfowardNeuralNetwork(sizes: sizes)
-
-var start = NSDate()
-ann.getWeights()
-ann.feedforward(x, activationFunction: 3, useMetal: 0)
-var end = NSDate().timeIntervalSinceDate(start)
-
-var s = NSDate()
-//ann.feedforward(x, activationFunction: 1, useMetal: 1)
+sum(softmax(t))

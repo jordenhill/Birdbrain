@@ -15,11 +15,20 @@ public func sum(x: [Float]) -> Float {
     return result
 }
 
+//Add a vector x to a vector y
 public func add(x: [Float], y: [Float]) -> [Float] {
     var results = [Float](y)
     cblas_saxpy(Int32(x.count), 1.0, x, 1, &results, 1)
     
     return results
+}
+
+//Add a scalar c to a vector x
+public func add(x: [Float], var c: Float) -> [Float] {
+    var result = [Float](count : x.count, repeatedValue : 0.0)
+    vDSP_vsadd(x, 1, &c, &result, 1, vDSP_Length(x.count))
+    
+    return result
 }
 
 public func sub(A: [Float], B: [Float]) -> [Float] {
@@ -30,19 +39,7 @@ public func sub(A: [Float], B: [Float]) -> [Float] {
 }
 
 //Add a scalar value c of type double elementwise to a vector x
-public func scalAdd(var c: Float, x: [Float]) -> [Float] {
-    var result = [Float](count : x.count, repeatedValue : 0.0)
-    vDSP_vsadd(x, 1, &c, &result, 1, vDSP_Length(x.count))
-    
-    return result
-}
 
-public func scalMul(x: [Float], var y: Float) -> [Float] {
-    var result = [Float](count : x.count, repeatedValue : 0.0)
-    vDSP_vsmul(x, 1, &y, &result, 1, vDSP_Length(x.count))
-    
-    return result
-}
 
 //Multiply a vextor x by a vector y.
 /*
@@ -56,6 +53,14 @@ public func mul(x: [Float], y: [Float]) -> [Float] {
     vDSP_vmul(x, 1, y, 1, &results, 1, vDSP_Length(x.count))
     
     return results
+}
+
+//Multiply a vector x by a scalar y.
+public func mul(x: [Float], var y: Float) -> [Float] {
+    var result = [Float](count : x.count, repeatedValue : 0.0)
+    vDSP_vsmul(x, 1, &y, &result, 1, vDSP_Length(x.count))
+    
+    return result
 }
 
 //Multiply a matrix A of float values by a vector x of float values.
@@ -80,6 +85,15 @@ public func div(x: [Float], y: [Float]) -> [Float] {
     vvdivf(&results, x, y, [Int32(x.count)])
     
     return results
+}
+
+//Divide a vector x by a scalar y
+public func div(x: [Float], y: Float) -> [Float] {
+    let divisor = [Float](count: x.count, repeatedValue: y)
+    var result = [Float](count: x.count, repeatedValue: 0.0)
+    vvdivf(&result, x, divisor, [Int32(x.count)])
+    
+    return result
 }
 
 //Perform an elementwise exponentiation on a vector x
@@ -114,6 +128,7 @@ public func neg(x: [Float]) -> [Float] {
     return results
 }
 
+//Transpose a matrix
 public func trans(A: [Float], m: Int, n: Int) -> [Float] {
     var transMatrix = [Float](count: A.count, repeatedValue: 0.0)
     
@@ -121,6 +136,7 @@ public func trans(A: [Float], m: Int, n: Int) -> [Float] {
     return transMatrix
 }
 
+//Multiply two vectors (considered as matrices in function) and create a matrix
 public func formMatrix(A: [Float], B: [Float]) -> [Float] {
     var result = [Float](count: A.count * B.count, repeatedValue: 0.0)
     
@@ -152,9 +168,48 @@ public func rand_gauss() -> Float {
     }
 }
 
-public func randf(x: Int, y: Int) -> Float {
+public func initRand(n: Int) -> Float {
     let ARC4RANDOM_MAX: Float = 0x100000000
-    let b = sqrtf(Float(6 / (Float(x) + Float(y))))
-    let range = b + b
+    let b = sqrtf(Float(1 / (Float(n))))
+    let range = b - (-b)
     return ((Float(arc4random()) / Float(ARC4RANDOM_MAX)) * range - b)
+}
+
+//Rectified Linear Unit (y = max(0,x))
+public func relu(x: [Float]) -> [Float] {
+    let activation: [Float] = x.map({($0 < 0.0) ? 0.0 : $0})
+    return activation
+}
+
+//Sigmoid function (1 / (1 + e^-x))
+public func sigmoid(x: [Float]) -> [Float] {
+    let ones = [Float](count: x.count, repeatedValue: 1.0)
+    let z: [Float] =  div(ones, y: (add(exp(neg(x)), c: 1.0)))
+    return z
+}
+
+//Sigmoid prime (sigmoid(x) * (1 - sigmoid(x))
+public func sigmoidPrime(x: [Float]) -> [Float] {
+    return mul(sigmoid(x), y: add(neg(sigmoid(x)), c: 1.0))
+}
+
+//Hyperbolic tangent prime (1 - tanh(x)^2)
+public func tanhPrime(x: [Float]) -> [Float] {
+    return add(neg(square(tanh(x))), c: 1.0)
+}
+
+//ReLU prime (x > 0 = 1, x <= 0 = 0)
+public func reluPrime(x: [Float]) -> [Float] {
+    let activation: [Float] = x.map({($0 <= 0.0) ? 0.0 : 1})
+    return activation
+}
+
+//Softmax function (e^z / sum(e^z))
+public func softmax(z: [Float]) -> [Float] {
+    return div(exp(z), y: sum(exp(z)))
+}
+
+//Get the cost derivative
+public func costDerivative(output: [Float], y: [Float]) -> [Float] {
+    return sub(output, B: y)
 }

@@ -17,6 +17,7 @@
 		BC32C8F11BC798AC00D92D94 /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */; };
 		BC32C8F31BC79EE700D92D94 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
 		BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */; };
+		BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +45,7 @@
 		BC32C8F21BC79EE600D92D94 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		BC7478E31BC4D561007EE74A /* Birdbrainplayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Birdbrainplayground.playground; sourceTree = "<group>"; };
 		BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BirdbrainMathTest.swift; sourceTree = "<group>"; };
+		BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecurrentNeuralNetwork.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 				BC7478E31BC4D561007EE74A /* Birdbrainplayground.playground */,
 				BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */,
 				BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */,
+				BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */,
 			);
 			path = Birdbrain;
 			sourceTree = "<group>";
@@ -219,6 +222,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */,
+				BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */,
 				BC32C8F11BC798AC00D92D94 /* MetalFunctions.metal in Sources */,
 				BC0090521BBB24170086F758 /* Math.swift in Sources */,
 				BC32C8EF1BC7979B00D92D94 /* MetalDevice.swift in Sources */,
