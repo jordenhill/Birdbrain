@@ -15,16 +15,12 @@ let dim = 5
  0,0,0,0,0,0
  0,0,0,0,0,0
  0,0,0,0,0,0]
-
 */
 var s = [Float](count: (x.count + 1) * dim, repeatedValue: 0.0)
-let t: [Float] = [1, 3, 2, 4]
-
-
-func softmax(z: [Float]) -> [Float] {
-    let x = sum(exp(z))
-    let y = [Float](count: z.count, repeatedValue: x)
-    return div(exp(z), y: y)
+var t = [Float](count: 10, repeatedValue: 0.0)
+for x in Range(start: 0, end: 10) {
+    t[x] = initRand(3)
 }
-
-sum(softmax(t))
+t
+let q: Float = 0.5435
+softmax(t).maxElement()
