@@ -9,30 +9,36 @@
 
 import Metal
 
+///A Feedforward Neural Network class.
 public class FeedfowardNeuralNetwork {
   var numLayers: Int
   var sizes: [Int]
   var biases = [[Float]]()
   var weights = [[Float]]()
-  var useMetal = Int()
-  var activationFunction = Int()
+  var useMetal: Bool
+  var activationFunction: Int
     
-  //Construct the network of the size stated in the array. The count of the array is the number of
-  //layers, the values in the array are the number of neurons per layer.
-  public init (sizes: [Int], useMetal: Int, activationFunction: Int) {
+  /**Constructor for Feedforward Neural Network.
+    - Parameter sizes: The number of layers and size of each layer in the network.
+    - Parameter useMetal: Indicate whether to use Metal functions or not.
+    - Parameter activationFunction: Activation function to use 
+      (1 - Sigmoid, 2, Hyperbolic Tangent, 3 - ReLu).
+   */
+  public init (sizes: [Int], useMetal: Bool, activationFunction: Int) {
+    //Set initialization values.
     numLayers = sizes.count
     self.sizes = sizes
     self.useMetal = useMetal
     self.activationFunction = activationFunction
     
-    //Prepare the biases
+    //Initialize the biases
     for y in sizes[1..<sizes.endIndex] {
       var bias = [Float](count: y, repeatedValue: 0)
       bias = bias.map() { _ in 0.0 }
       biases.append(bias)
     }
         
-    //Prepare the weights
+    //Initialize the weights
     for (x, y) in zip(sizes[0..<sizes.endIndex - 1], sizes[1..<sizes.endIndex]) {
       var w = [Float](count: x*y, repeatedValue: 0)
       w = w.map() { _ in initRand(x)}
@@ -40,84 +46,96 @@ public class FeedfowardNeuralNetwork {
     }
   }
     
-    //Return the weights of the network.
+  /**Return the weights of the network.
+    - Returns: An array of the network's weight values.
+  */
   public func getWeights() -> [[Float]] {
     return weights
   }
     
-  //Return the biases of the network.
+  /**Return the biases of the network.
+    - Returns: An array of the network's bias values.
+  */
   public func getBiases() -> [[Float]] {
     return biases
   }
-    
+  
+  /**Get the number of layers in the network.
+    - Returns: The number of layers in the network.
+  */
   public func getNetworkSize() -> Int {
     return numLayers
   }
     
-  //Perform a forward propagation on the network and return the result. The number indicates the
-  //activation function (1: Sigmoid, 2: Tanh, 3: ReLU)
+  /**Perform a forward propagation on the network using the given input.
+   - Parameter input: The input to the network.
+   - Returns: An array of the activations at each layer of the network.
+  */
   public func feedforward(input: [Float]) -> [[Float]] {
     var a = [[Float]]()
     var activation = input
     var i = 1
         
-    switch(useMetal) {
-      case 0:
-        for (b,w) in zip(biases,weights) {
-          let n = Int32(sizes[i - 1])
-          let m = Int32(sizes[i])
+    if (useMetal) { //Use Metal GPU functions
+      for (b,w) in zip(biases,weights) {
+        let n = Int32(sizes[i - 1])
+        let m = Int32(sizes[i])
                     
-          if (activationFunction == 1) { //sigmoid
-            a.append(sigmoid(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-          }
-          else if (activationFunction == 2) { //hyperbolic tangent
-            a.append(tanh(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-          }
-          else if (activationFunction == 3) { //Rectified Linear
-            a.append(relu(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-          }
-          else {
-            print("No appropriate activation function entered.")
-          }
-                    
-          i++
-          activation = a[a.endIndex - 1]
+        if (activationFunction == 1) { //Sigmoid
+          a.append(sigmoid(add(mvMul(w, m: m, n: n, x: activation), y: b)))
         }
-        case 1:
-          for (b,w) in zip(biases,weights) {
-            let n = Int32(sizes[i - 1])
-            let m = Int32(sizes[i])
-            
-            if (activationFunction == 1) { //sigmoid
-              a.append(mtlSigmoid(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-            }
-            else if (activationFunction == 2) { //hyperbolic tangent
-              a.append(mtlTanh(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-            }
-            else if (activationFunction == 3) { //Rectified Linear
-              a.append(mtlRelu(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-            }
-            else {
-              print("No appropriate activation function entered.")
-            }
+        else if (activationFunction == 2) { //Hyperbolic tangent
+          a.append(tanh(add(mvMul(w, m: m, n: n, x: activation), y: b)))
+        }
+        else if (activationFunction == 3) { //Rectified Linear
+          a.append(relu(add(mvMul(w, m: m, n: n, x: activation), y: b)))
+        }
+        else {
+          print("No appropriate activation function entered.")
+        }
                     
-            i++
-            activation = a[a.endIndex - 1]
-          }
-        default:
-          print("Error, must enter 0 or 1 for UseMetal")
-    }
+        i += 1
         
+        activation = a[a.endIndex - 1]
+      }
+    }
+    else { //Use Accelerate CPU functions.
+      for (b,w) in zip(biases,weights) {
+        let n = Int32(sizes[i - 1])
+        let m = Int32(sizes[i])
+        
+        if (activationFunction == 1) { //Sigmoid
+          a.append(mtlSigmoid(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+        }
+        else if (activationFunction == 2) { //Hyperbolic tangent
+          a.append(mtlTanh(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+        }
+        else if (activationFunction == 3) { //Rectified Linear
+          a.append(mtlRelu(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+        }
+        else {
+          print("No appropriate activation function entered.")
+        }
+                    
+        i += 1
+        
+        activation = a[a.endIndex - 1]
+      }
+    }
+
     return a
   }
     
-  //Perform a backward propagation on the network.
+  /**Perform a backward propagation on the network.
+    - Parameter input: The input to the network.
+    - Parameter target: Target output of the network.
+    - Parameter learningRate: The learning rate of the network.
+  */
   public func backpropagate(input: [Float], target: [Float], learningRate: Float) {
-    //Compute a forward pass, hold z values and activations
     var nablaB = [[Float]]()
     var nablaW = [[Float]]()
         
-    if (useMetal == 0) {
+    if (useMetal) {
       (nablaB, nablaW) = backprop(input, target: target)
             
       for l in Range(start:0, end: numLayers - 1) {
@@ -134,7 +152,12 @@ public class FeedfowardNeuralNetwork {
       }
     }
   }
-    
+  
+  /**Backpropagation helper function.
+    - Parameter input: Input to neural network.
+    - Parameter target: Target output of the network.
+    - Returns: The changes in the weights and biases of the network.
+  */
   private func backprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
     //Build namblaW and namblaB
     var deltaW = [[Float]]()
@@ -155,6 +178,7 @@ public class FeedfowardNeuralNetwork {
       deltaB.append([Float](count: b.count, repeatedValue: 0.0))
     }
     
+    //Compute a forward pass, hold z values and activations
     for (b, w) in zip(biases, weights) {
       m = Int32(sizes[i])
       n = Int32(sizes[i - 1])
@@ -172,7 +196,8 @@ public class FeedfowardNeuralNetwork {
         activation = relu(z)
       }
             
-      i++
+      i += 1
+      
       activations.append(activation)
     }
         
@@ -235,7 +260,7 @@ public class FeedfowardNeuralNetwork {
     for b in biases {
       nablaB.append([Float](count: b.count, repeatedValue: 0.0))
     }
-            
+    
     for (b, w) in zip(biases, weights) {
       m = Int32(sizes[i])
       n = Int32(sizes[i - 1])
@@ -253,7 +278,8 @@ public class FeedfowardNeuralNetwork {
         activation = mtlRelu(z)
       }
             
-      i++
+      i += 1
+      
       activations.append(activation)
     }
         
@@ -297,15 +323,19 @@ public class FeedfowardNeuralNetwork {
     return (nablaB, nablaW)
   }
     
-  //Combine and average weights in two neural nets
+  /**Combine and average weights in two neural nets.
+    - Parameter otherNet: Another feedfowrd neural network.
+  */
   public func combine(otherNet: FeedfowardNeuralNetwork) {
-    if((numLayers == otherNet.numLayers) && (sizes == otherNet.sizes)) {
-      var newWeights = [[Float]]()
-      for (w1, w2) in zip(weights, otherNet.weights) {
-        newWeights.append(mul(add(w1, y: w2), y: 0.5))
-      }
-      
-      weights = newWeights
+    precondition((numLayers == otherNet.numLayers) && (sizes == otherNet.sizes),
+      "Nets must have the same size.")
+    
+    var newWeights = [[Float]]()
+    
+    for (w1, w2) in zip(weights, otherNet.weights) {
+        newWeights.append(div(add(w1, y: w2), c: 2.0))
     }
+      
+    weights = newWeights
   }
 }
