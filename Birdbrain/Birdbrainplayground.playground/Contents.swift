@@ -7,21 +7,10 @@ import Metal
 
 var str = "Hello, playground"
 
-struct Vector2 // matches float2 in Metal
-{
-    var x0: Float = 0.0
-    var x1: Float = 0.0
-}
+let x = [[Float]](count: 10, repeatedValue: [Float](count: 100, repeatedValue: 1))
+//x[0].count
+//var rnn = RecurrentNeuralNetwork(inputDim: 8000, hiddenDim: 100)
+//rnn.feedforward(x, useMetal: false, activationFunction: 1)
 
-let sizes = [1000,1000,10]
-var x = [Float](count: sizes[0], repeatedValue: 0.0)
-x = x.map({_ in rand_gauss()})
-var ann = FeedfowardNeuralNetwork(sizes: sizes)
-
-var start = NSDate()
-ann.getWeights()
-ann.feedforward(x, activationFunction: 3, useMetal: 0)
-var end = NSDate().timeIntervalSinceDate(start)
-
-var s = NSDate()
-//ann.feedforward(x, activationFunction: 1, useMetal: 1)
+var lstm = LSTMNetwork(inputDim: 100, memCellCount: 2500)
+lstm.feedforward(x, useMetal: false, activationFunction: 1)
