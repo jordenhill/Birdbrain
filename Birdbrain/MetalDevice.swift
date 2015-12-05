@@ -15,45 +15,50 @@ func initMetal() -> (MTLDevice, MTLLibrary, MTLCommandBuffer, MTLComputeCommandE
   return (device!, library!, commandBuffer, commandEncoder)
 }
 
-func mtlSigmoid(x: [Float]) -> [Float] {
-  return performActivationFunction("sigmoid", input: x)
+//MARK: Vector Sum Function
+
+func performElementwiseFunction(function_name: String, vector: [Float]) -> [Float] {
+  let (device, library, commandBuffer, commandEncoder) = initMetal()
+  let sigmoidFunction = library.newFunctionWithName(function_name)
+  let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
+  sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
+  //let computePipelineErrors = NSErrorPointer()
+  var computePipelineState:MTLComputePipelineState? = nil
+  var output = [Float](count: vector.count, repeatedValue: 0.0)
+  
+  do {
+    computePipelineState = try device.newComputePipelineStateWithFunction(sigmoidFunction!)
+  } catch {
+    print("catching..")
+  }
+  
+  let inputBuffer = createBuffer(vector, device: device)
+  let outputBuffer = createBuffer(output, device: device)
+  
+  commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+  commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+  commandEncoder.setComputePipelineState(computePipelineState!)
+  
+  let threadExecutionWidth = computePipelineState!.threadExecutionWidth
+  
+  let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
+  let numThreadgroups = MTLSize(width:(vector.count+threadExecutionWidth)/threadExecutionWidth,
+    height: 1, depth: 1)
+  
+  commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
+  commandEncoder.endEncoding()
+  commandBuffer.commit()
+  commandBuffer.waitUntilCompleted()
+  
+  let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count*sizeof(Float),
+    freeWhenDone: false)
+  
+  data.getBytes(&output, length:vector.count * sizeof(Float))
+  
+  return output
 }
 
-func mtlTanh(x: [Float]) -> [Float] {
-  return performActivationFunction("tanh", input: x)
-}
-
-func mtlRelu(x: [Float]) -> [Float] {
-  return performActivationFunction("relu", input: x)
-}
-
-func mtlSigmoidPrime(x: [Float]) -> [Float] {
-  return performActivationFunction("sigmoid_prime", input: x)
-}
-
-func mtlTanhPrime(x: [Float]) -> [Float] {
-  return performActivationFunction("tanh_prime", input: x)
-}
-
-func mtlReluPrime(x: [Float]) -> [Float] {
-  return performActivationFunction("relu_prime", input: x)
-}
-
-func mtlAdd(x: [Float], y: [Float]) -> [Float] {
-  return performVecVecFunction("add", vectorX: x, vectorY: y)
-}
-
-func mtlSub(x: [Float], y: [Float]) -> [Float] {
-  return performVecVecFunction("subtract", vectorX: x, vectorY: y)
-}
-
-func mtlMul(x: [Float], y: [Float]) -> [Float] {
-  return performVecVecFunction("multiply", vectorX: x, vectorY: y)
-}
-
-func mtlScalMul(v: [Float], c: Float) -> [Float] {
-  return performVecScalFunction("scalar_multiply", vector: v, scalar: c)
-}
+//MARK: Activation Function
 
 func performActivationFunction(function_name: String, input: [Float]) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
@@ -95,6 +100,8 @@ func performActivationFunction(function_name: String, input: [Float]) -> [Float]
     
   return output
 }
+
+//MARK: Vector-Vector Function
 
 func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Float]) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
@@ -138,6 +145,8 @@ func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Flo
   return outputVector
 }
 
+//MARK: Vector-Scalar function
+
 func performVecScalFunction(functionName: String, vector: [Float], scalar: Float) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
   let sigmoidFunction = library.newFunctionWithName(functionName)
@@ -179,6 +188,9 @@ func performVecScalFunction(functionName: String, vector: [Float], scalar: Float
     
   return outputVector
 }
+
+
+//MARK: Extra Methods
 
 func createBuffer(var vector: [Float], device: MTLDevice) -> MTLBuffer {
   let byteLength = vector.count * sizeof(Float)

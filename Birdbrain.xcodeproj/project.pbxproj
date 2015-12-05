@@ -19,6 +19,7 @@
 		BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */; };
 		BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */; };
 		BCF7F4E01C10340800AAFBE0 /* LSTMNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */; };
+		BCF7F4E21C113B3B00AAFBE0 /* MetalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4E11C113B3B00AAFBE0 /* MetalMath.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +49,7 @@
 		BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BirdbrainMathTest.swift; sourceTree = "<group>"; };
 		BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecurrentNeuralNetwork.swift; sourceTree = "<group>"; };
 		BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LSTMNetwork.swift; sourceTree = "<group>"; };
+		BCF7F4E11C113B3B00AAFBE0 /* MetalMath.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalMath.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,15 +96,10 @@
 		BC0090351BBB22700086F758 /* Birdbrain */ = {
 			isa = PBXGroup;
 			children = (
-				BC0090361BBB22700086F758 /* Birdbrain.h */,
-				BC0090381BBB22700086F758 /* Info.plist */,
-				BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */,
-				BC0090511BBB24170086F758 /* Math.swift */,
-				BC7478E31BC4D561007EE74A /* Birdbrainplayground.playground */,
-				BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */,
-				BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */,
-				BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */,
-				BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */,
+				BCF7F4E71C1142F300AAFBE0 /* Other */,
+				BCF7F4E61C113F9500AAFBE0 /* Metal */,
+				BCF7F4E41C113F6200AAFBE0 /* Math */,
+				BCF7F4E51C113F7A00AAFBE0 /* NetworkModels */,
 			);
 			path = Birdbrain;
 			sourceTree = "<group>";
@@ -115,6 +112,44 @@
 				BC0090441BBB22710086F758 /* Info.plist */,
 			);
 			path = BirdbrainTests;
+			sourceTree = "<group>";
+		};
+		BCF7F4E41C113F6200AAFBE0 /* Math */ = {
+			isa = PBXGroup;
+			children = (
+				BC7478E31BC4D561007EE74A /* Birdbrainplayground.playground */,
+				BC0090511BBB24170086F758 /* Math.swift */,
+				BCF7F4E11C113B3B00AAFBE0 /* MetalMath.swift */,
+			);
+			name = Math;
+			sourceTree = "<group>";
+		};
+		BCF7F4E51C113F7A00AAFBE0 /* NetworkModels */ = {
+			isa = PBXGroup;
+			children = (
+				BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */,
+				BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */,
+				BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */,
+			);
+			name = NetworkModels;
+			sourceTree = "<group>";
+		};
+		BCF7F4E61C113F9500AAFBE0 /* Metal */ = {
+			isa = PBXGroup;
+			children = (
+				BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */,
+				BC32C8F01BC798AC00D92D94 /* MetalFunctions.metal */,
+			);
+			name = Metal;
+			sourceTree = "<group>";
+		};
+		BCF7F4E71C1142F300AAFBE0 /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				BC0090381BBB22700086F758 /* Info.plist */,
+				BC0090361BBB22700086F758 /* Birdbrain.h */,
+			);
+			name = Other;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -229,6 +264,7 @@
 				BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */,
 				BC32C8F11BC798AC00D92D94 /* MetalFunctions.metal in Sources */,
 				BC0090521BBB24170086F758 /* Math.swift in Sources */,
+				BCF7F4E21C113B3B00AAFBE0 /* MetalMath.swift in Sources */,
 				BC32C8EF1BC7979B00D92D94 /* MetalDevice.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -10,11 +10,11 @@ var spareReady: Bool = false
 
 //MARK: Vector Sum
 
-/**Compute the vector sum of a vector.
+/** Compute the vector sum of a vector.
   - Parameter x: Vector.
   - Returns: A single precision vector sum.
 */
-public func sum(x: [Float]) -> Float {
+func sum(x: [Float]) -> Float {
   var result: Float = 0.0
   
   vDSP_sve(x, 1, &result, vDSP_Length(x.count))
@@ -24,12 +24,12 @@ public func sum(x: [Float]) -> Float {
 
 //MARK: Addition
 
-/**Add a vector to another vector.
+/** Add a vector to another vector.
   - Parameter x: Vector x.
   - Parameter y: Vector y.
   - Returns: A vector containing the sum of the two vectors.
 */
-public func add(x: [Float], y: [Float]) -> [Float] {
+func add(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
   var result = [Float](y)
   
@@ -43,7 +43,7 @@ public func add(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: scalar c.
   - Returns: A vector containing the sum of the vector and scalar.
 */
-public func add(x: [Float], var c: Float) -> [Float] {
+func add(x: [Float], var c: Float) -> [Float] {
   var result = [Float](count : x.count, repeatedValue : 0.0)
   
   vDSP_vsadd(x, 1, &c, &result, 1, vDSP_Length(x.count))
@@ -58,7 +58,7 @@ public func add(x: [Float], var c: Float) -> [Float] {
   - Parameter y: Vector y.
   - Returns: A vector containing the difference of x and y.
 */
-public func sub(x: [Float], y: [Float]) -> [Float] {
+func sub(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
   var results = [Float](x)
   
@@ -72,7 +72,7 @@ public func sub(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: Scalar c.
   - Returns: A vector containing the difference of the scalar and the vector.
 */
-public func sub(A: [Float], c: Float) -> [Float] {
+func sub(A: [Float], c: Float) -> [Float] {
   var result = [Float](A)
   let operand = [Float](count: A.count, repeatedValue: c)
 
@@ -83,12 +83,12 @@ public func sub(A: [Float], c: Float) -> [Float] {
 
 //MARK: Multiplication
 
-/**Multiply a vector x by a vector y.
+/** Multiply a vector x by a vector y.
   - Parameter x: Vector x.
   - Parameter y: Vector y.
   - Returns: The product of vector x and vector y.
 */
-public func mul(x: [Float], y: [Float]) -> [Float] {
+func mul(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -97,12 +97,12 @@ public func mul(x: [Float], y: [Float]) -> [Float] {
   return results
 }
 
-/**Multiply a vector x by a scalar y.
+/** Multiply a vector x by a scalar y.
   - Parameter x: Vector x.
   - Parameter c: scalar c.
   - Returns: The product of vector x multiplied elementwise by scalar c.
 */
-public func mul(x: [Float], var y: Float) -> [Float] {
+func mul(x: [Float], var y: Float) -> [Float] {
   var result = [Float](count : x.count, repeatedValue : 0.0)
   
   vDSP_vsmul(x, 1, &y, &result, 1, vDSP_Length(x.count))
@@ -118,23 +118,23 @@ public func mul(x: [Float], var y: Float) -> [Float] {
   - x: Vector x.
  - Returns: A vector product of matrix A and vector x.
 */
-public func mvMul(A: [Float], m: Int32, n: Int32, x: [Float]) -> [Float] {
-  precondition(Int(n) == x.count, "Number of columns in A must equal length of x.")
+public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
+  precondition(Int(n) == x.count, "Number of columns in matrix A must equal length of vector x.")
   var results = [Float](count: Int(m), repeatedValue: 0.0)
     
-  cblas_sgemv(CblasRowMajor, CblasNoTrans, m, n, 1, A, n, x, 1, 0, &results, 1)
+  cblas_sgemv(CblasRowMajor, CblasNoTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
     
   return results
 }
 
 //MARK: Division
 
-/**Divide a vector x by a vector y.
+/** Divide a vector x by a vector y.
   - Parameter x: Vector to be divided.
   - Parameter y: Divisor vector.
   - Returns: A vector result of x divided by y.
 */
-public func div(x: [Float], y: [Float]) -> [Float] {
+func div(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must be of equal length.")
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -143,12 +143,12 @@ public func div(x: [Float], y: [Float]) -> [Float] {
   return results
 }
 
-/**Divide a vector x by a scalar y
+/** Divide a vector x by a scalar y
   - Parameter x: Vector x.
   - Parameter c: Scalar c.
   - Returns: A vector containing x dvidided elementwise by vector c.
 */
-public func div(x: [Float], c: Float) -> [Float] {
+func div(x: [Float], c: Float) -> [Float] {
   let divisor = [Float](count: x.count, repeatedValue: c)
   var result = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -159,11 +159,11 @@ public func div(x: [Float], c: Float) -> [Float] {
 
 //MARK: Special elementwise functions
 
-/**Perform an elementwise exponentiation on a vector.
+/** Perform an elementwise exponentiation on a vector.
   - Parameter x: Vector x.
   - Returns: A vector containing x exponentiated elementwise.
 */
-public func exp(x: [Float]) -> [Float] {
+func exp(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vvexpf(&results, x, [Int32(x.count)])
@@ -171,11 +171,11 @@ public func exp(x: [Float]) -> [Float] {
   return results
 }
 
-/**Square a vector elementwise.
+/** Square a vector elementwise.
   - Parameter x: Vector x.
   - Returns: A vector containing elementwise squares of vectir x.
 */
-public func square(x: [Float]) -> [Float] {
+func square(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vsq(x, 1, &results, 1, vDSP_Length(x.count))
@@ -187,7 +187,7 @@ public func square(x: [Float]) -> [Float] {
   - Parameter x: Vector x.
   - Returns: An elementwise negation of vector x.
 */
-public func neg(x: [Float]) -> [Float] {
+func neg(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vneg(x, 1, &results, 1, vDSP_Length(x.count))
@@ -203,7 +203,7 @@ public func neg(x: [Float]) -> [Float] {
   - Parameter n: Number of columns in A.
   - Returns: A transposed matrix A with m columns and n rows.
 */
-public func trans(A: [Float], m: Int, n: Int) -> [Float] {
+func trans(A: [Float], m: Int, n: Int) -> [Float] {
   var transMatrix = [Float](count: A.count, repeatedValue: 0.0)
     
   vDSP_mtrans(A, 1, &transMatrix, 1, vDSP_Length(m), vDSP_Length(n))
@@ -217,11 +217,12 @@ public func trans(A: [Float], m: Int, n: Int) -> [Float] {
  - Returns: A matrix of x.count rows and y.count columns.
 */
 public func formMatrix(x: [Float], y: [Float]) -> [Float] {
-  var result = [Float](count: x.count * y.count, repeatedValue: 0.0)
-    
+  var result = [Float](count: x.count * y.count, repeatedValue: Float())
+  
+  let start = NSDate()
   vDSP_mmul(x, 1, y, 1, &result, 1, vDSP_Length(result.count / y.count),
     vDSP_Length(result.count / x.count), vDSP_Length(1))
-    
+  print(NSDate().timeIntervalSinceDate(start))
   return result
 }
 
@@ -260,7 +261,7 @@ public func rand_gauss() -> Float {
   - Parameter n: Number of connections from previous layer.
   - Returns: A uniform distribution between the interval [-1/sqrt(n),1/sqrt(n)].
 */
-public func initRand(n: Int) -> Float {
+func initRand(n: Int) -> Float {
   let ARC4RANDOM_MAX: Float = 0x100000000
   let b = sqrtf(Float(1 / (Float(n))))
   let range = b - (-b)
@@ -274,7 +275,7 @@ public func initRand(n: Int) -> Float {
   - Parameter x: A vector x.
   - Returns: A vector z = max(0,x).
 */
-public func relu(x: [Float]) -> [Float] {
+func relu(x: [Float]) -> [Float] {
   let z: [Float] = x.map({($0 < 0.0) ? 0.0 : $0})
   
   return z
@@ -284,7 +285,7 @@ public func relu(x: [Float]) -> [Float] {
   - Parameter x: A vector x.
   - Returns: A vector z = (1 / (1 + e^-x)).
 */
-public func sigmoid(x: [Float]) -> [Float] {
+func sigmoid(x: [Float]) -> [Float] {
   let ones = [Float](count: x.count, repeatedValue: 1.0)
   let z: [Float] =  div(ones, y: (add(exp(neg(x)), c: 1.0)))
   
@@ -295,7 +296,7 @@ public func sigmoid(x: [Float]) -> [Float] {
   - Parameter x: A vector x.
   - Returns: A vector z = tanh(x).
 */
-public func tanh(x: [Float]) -> [Float] {
+func tanh(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vvtanhf(&results, x, [Int32(x.count)])
@@ -305,11 +306,11 @@ public func tanh(x: [Float]) -> [Float] {
 
 //MARK: Activation function derivatives
 
-/**Sigmoid prime function. 
+/** Sigmoid prime function.
   - Parameter x: A vector x.
   - Returns: A vector y = (sigmoid(x) * (1 - sigmoid(x)).
 */
-public func sigmoidPrime(x: [Float]) -> [Float] {
+func sigmoidPrime(x: [Float]) -> [Float] {
   return mul(sigmoid(x), y: add(neg(sigmoid(x)), c: 1.0))
 }
 
@@ -317,15 +318,15 @@ public func sigmoidPrime(x: [Float]) -> [Float] {
   - Parameter x: A vector x.
   - Returns: A vector y = (1 - tanh(x)^2).
 */
-public func tanhPrime(x: [Float]) -> [Float] {
+func tanhPrime(x: [Float]) -> [Float] {
   return add(neg(square(tanh(x))), c: 1.0)
 }
 
-/**ReLU prime function.
+/** ReLU prime function.
   - Parameter x: A vector x.
   - Returns: A vector y = (x > 0 = 1, x <= 0 = 0).
 */
-public func reluPrime(x: [Float]) -> [Float] {
+func reluPrime(x: [Float]) -> [Float] {
   let activation: [Float] = x.map({($0 <= 0.0) ? 0.0 : 1})
   
   return activation
@@ -333,11 +334,11 @@ public func reluPrime(x: [Float]) -> [Float] {
 
 //MARK: Softmax function
 
-/**Softmax function. 
+/** Softmax function. 
   - Parameter z: A vector z.
   - Returns: A vector y = (e^z / sum(e^z))
 */
-public func softmax(z: [Float]) -> [Float] {
+func softmax(z: [Float]) -> [Float] {
   let x = exp(sub(z, c: z.maxElement()!))
   
   return div(x, c: sum(x))
@@ -345,11 +346,11 @@ public func softmax(z: [Float]) -> [Float] {
 
 //MARK: Cost Derivative
 
-/**Cost derivative function.
+/** Cost derivative function.
   - Parameter output: Output of network.
   - Parameter y: Target output.
   - Returns A vector y' = (output - y).
 */
-public func costDerivative(output: [Float], y: [Float]) -> [Float] {
+func costDerivative(output: [Float], y: [Float]) -> [Float] {
   return sub(output, y: y)
 }
