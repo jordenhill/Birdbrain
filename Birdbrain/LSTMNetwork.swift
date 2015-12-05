@@ -33,41 +33,92 @@ public class LSTMNetwork {
     woh = (1...memCellCount * memCellCount).map{_ in initRand(inputDim)}
   }
   
-  public func feedforward(input: [[Float]], useMetal: Bool, activationFunction: Int)
-    -> ([[Float]], [[Float]]) {
-      let T = input.count;
-      let start = [Float](count: memCellCount, repeatedValue: 0.0)
-      var g = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-      var f = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-      var i = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-      var o = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-      var s = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-      var h = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+  public func feedforward(input: [[Float]], useMetal: Bool)
+    -> ([[Float]], [[Float]], [[Float]]) {
       
-      g[0] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
-        y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))
-      i[0] = sigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[0]),
-        y: mvMul(wih, m: memCellCount, n: memCellCount, x: start)))
-      f[0] = sigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[0]),
-        y: mvMul(wfh, m: memCellCount, n: memCellCount, x: start)))
-      o[0] = sigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[0]),
-        y: mvMul(woh, m: memCellCount, n: memCellCount, x: start)))
-      s[0] = add(mul(g[0], y: i[0]), y: mul(s[0], y: f[0]))
-      h[0] = mul(s[0], y: o[0])
-      
-      for t in Range(start: 1, end: T) {
-        g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
-          y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-        i[t] = sigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
-          y: mvMul(wih, m: memCellCount, n: memCellCount, x: h[t - 1])))
-        f[t] = sigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[t]),
-          y: mvMul(wfh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-        o[t] = sigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[t]),
-          y: mvMul(woh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-        s[t] = add(mul(g[t], y: i[t]), y: mul(s[t - 1], y: f[t]))
-        h[t] = mul(s[t], y: o[t])
+      if (useMetal) {
+        return GPUCompute(input)
       }
-      
-      return (s, h)
+      else {
+        return CPUCompute(input)
+      }
+  }
+  
+  private func GPUCompute(input: [[Float]]) -> ([[Float]], [[Float]], [[Float]]) {
+    let T = input.count;
+    let start = [Float](count: memCellCount, repeatedValue: 0.0)
+    var g = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var f = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var i = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var s = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var h = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var y = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    
+    g[0] = mtlTanh(mtlAdd(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))
+    i[0] = mtlSigmoid(mtlAdd(mvMul(wix, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wih, m: memCellCount, n: memCellCount, x: start)))
+    f[0] = mtlSigmoid(mtlAdd(mvMul(wfx, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wfh, m: memCellCount, n: memCellCount, x: start)))
+    o[0] = mtlSigmoid(mtlAdd(mvMul(wox, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(woh, m: memCellCount, n: memCellCount, x: start)))
+    s[0] = mtlAdd(mtlMul(g[0], y: i[0]), y: mtlMul(s[0], y: f[0]))
+    h[0] = mtlMul(s[0], y: o[0])
+    y[0] = mtlSoftmax(s[0])
+    
+    for t in Range(start: 1, end: T) {
+      g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      i[t] = mtlSigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wih, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      f[t] = mtlSigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wfh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      o[t] = mtlSigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(woh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      s[t] = mtlAdd(mtlMul(g[t], y: i[t]), y: mtlMul(s[t - 1], y: f[t]))
+      h[t] = mtlMul(s[t], y: o[t])
+      y[t] = mtlSoftmax(s[t])
+    }
+    return (s, y, h)
+  }
+  
+  private func CPUCompute(input: [[Float]]) -> ([[Float]], [[Float]], [[Float]]) {
+    let T = input.count;
+    let start = [Float](count: memCellCount, repeatedValue: 0.0)
+    var g = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var f = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var i = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var s = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var h = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    var y = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    
+    g[0] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))
+    i[0] = sigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wih, m: memCellCount, n: memCellCount, x: start)))
+    f[0] = sigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(wfh, m: memCellCount, n: memCellCount, x: start)))
+    o[0] = sigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[0]),
+      y: mvMul(woh, m: memCellCount, n: memCellCount, x: start)))
+    s[0] = add(mul(g[0], y: i[0]), y: mul(s[0], y: f[0]))
+    h[0] = mul(s[0], y: o[0])
+    y[0] = softmax(s[0])
+    
+    for t in Range(start: 1, end: T) {
+      g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      i[t] = sigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wih, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      f[t] = sigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(wfh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      o[t] = sigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[t]),
+        y: mvMul(woh, m: memCellCount, n: memCellCount, x: h[t - 1])))
+      s[t] = add(mul(g[t], y: i[t]), y: mul(s[t - 1], y: f[t]))
+      h[t] = mul(s[t], y: o[t])
+      y[t] = softmax(s[t])
+    }
+    return (s, y, h)
   }
 }

@@ -14,7 +14,7 @@ var spareReady: Bool = false
   - Parameter x: Vector.
   - Returns: A single precision vector sum.
 */
-func sum(x: [Float]) -> Float {
+public func sum(x: [Float]) -> Float {
   var result: Float = 0.0
   
   vDSP_sve(x, 1, &result, vDSP_Length(x.count))

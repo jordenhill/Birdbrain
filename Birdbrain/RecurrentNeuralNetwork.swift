@@ -15,14 +15,16 @@ public class RecurrentNeuralNetwork {
   var whx: [Float]
   var why: [Float]
   var whh: [Float]
+  var activationFunction: Int
   
   /**Initializer for Recurrent Neural Network
     - Parameter inputDim: Dimension of inputs to RNN.
     - Parameter hiddenDim: Dimension of hidden neurons in RNN.
   */
-  public init(inputDim: Int, hiddenDim: Int) {
+  public init(inputDim: Int, hiddenDim: Int, activationFunction: Int) {
     self.inputDim = inputDim
     self.hiddenDim = hiddenDim
+    self.activationFunction = activationFunction
     whx = (1...hiddenDim * inputDim).map{_ in initRand(inputDim)}
     why = (1...inputDim * hiddenDim).map{_ in initRand(inputDim)}
     whh = (1...hiddenDim * hiddenDim).map{_ in initRand(hiddenDim)}
@@ -33,87 +35,143 @@ public class RecurrentNeuralNetwork {
   /**Do a feedforward pass on the RNN.
    - Parameter input: Input to RNN.
    - Parameter useMetal: Indicate whether to use metal GPU functions.
-   - Parameter activationFunction: Activation function to call (1 - Sigmoid, 2 - Tanh, 3 - ReLu)
    - Returns: An array tuple of the hidden states and outputs.
   */
-  public func feedforward(input: [[Float]], useMetal: Bool, activationFunction: Int)
+  public func feedforward(input: [[Float]], useMetal: Bool)
     -> ([[Float]], [[Float]]){
-      let T = input.count;
-      var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-      let start = [Float](count: hiddenDim, repeatedValue: 0.0)
-      var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
-     
+      
       if (useMetal) { //Use GPU
-        if (activationFunction == 1) { //Sigmoid
-          s[0] = mtlSigmoid(mtlAdd(mtlMul(whx, y: input[0]), y: mtlMul(whh, y: start)))
-          o[0] = mtlSoftmax(mtlMul(why, y: s[0]))
-          
-          for t in Range(start: 1, end: T) {
-            s[t] = mtlSigmoid(mtlAdd(whx, y: mtlMul(whh, y: s[t - 1])))
-            s[t] = mtlSoftmax(mtlMul(whx, y: s[t]))
-          }
-        }
-        else if (activationFunction == 2) { //Hyperbolic Tangent
-          s[0] = mtlTanh(mtlAdd(mtlMul(whx, y: input[0]), y: mtlMul(whh, y: start)))
-          o[0] = mtlSoftmax(mtlMul(why, y: s[0]))
-          
-          for t in Range(start: 1, end: T) {
-            s[t] = mtlTanh(mtlAdd(whx, y: mtlMul(whh, y: s[t - 1])))
-            s[t] = mtlSoftmax(mtlMul(whx, y: s[t]))
-          }
-        }
-        else if (activationFunction == 3) { //Rectified Linear
-          s[0] = mtlRelu(mtlAdd(mtlMul(whx, y: input[0]), y: mtlMul(whh, y: start)))
-          o[0] = mtlSoftmax(mtlMul(why, y: s[0]))
-          
-          for t in Range(start: 1, end: T) {
-            s[t] = mtlRelu(mtlAdd(whx, y: mtlMul(whh, y: s[t - 1])))
-            s[t] = mtlSoftmax(mtlMul(whx, y: s[t]))
-          }
-        }
-        else {
-          print("Not a proper entry for activation function")
-        }
+        return GPUCompute(input)
       }
       else { //Use CPU
-        if (activationFunction == 1) { //Sigmoid
-          
-          s[0] = sigmoid(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
-            y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start)))
-          o[0] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[0]))
+        return CPUCompute(input)
+      }
+  }
+  
+  //MARK: GPU Compute
+  
+  private func GPUCompute(input: [[Float]]) -> ([[Float]], [[Float]]) {
+    let start = [Float](count: hiddenDim, repeatedValue: 0.0)
+    let T = input.count;
+    var layers = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    
+    layers[0] = mtlAdd(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
+      y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
+    
+    for t in Range(start: 1, end: T) {
+      layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
+        y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
+    }
+    
+    if (activationFunction == 1) {
+      return GPUSigmoid(T, layers: layers)
+    }
+    else if (activationFunction == 2) {
+      return GPUTanh(T, layers: layers)
+    }
+    else {
+      return GPURelu(T, layers: layers)
+    }
+  }
+  
+  //MARK: GPU Activation Function Computation
+  
+  private func GPUSigmoid(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = mtlSigmoid(layers[t])
+      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    }
+    
+    return (s, o)
+  }
+  
+  private func GPUTanh(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = mtlTanh(layers[t])
+      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    }
+    
+    return (s, o)
+  }
+  
+  private func GPURelu(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = mtlRelu(layers[t])
+      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
 
-          for t in Range(start: 1, end: T) {
-            s[t] = sigmoid(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
-              y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: s[t - 1])))
-            o[t] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
-          }
-        }
-        else if (activationFunction == 2) { //Hyperbolic tangent
-          s[0] = tanh(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
-            y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start)))
-          o[0] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[0]))
-        
-          for t in Range(start: 1, end: T) {
-            s[t] = tanh(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
-              y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: s[t - 1])))
-            o[t] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
-          }
-      
-        }
-        else if (activationFunction == 3) {//Rectified Linear
-          s[0] = relu(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
-            y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start)))
-          o[0] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[0]))
-        
-          for t in Range(start: 1, end: T) {
-            s[t] = relu(add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
-              y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: s[t - 1])))
-            o[t] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
-          }
-        }
-        else {
-          print("Not a proper entry for activation function")
-        }
+    }
+    
+    return (s, o)
+  }
+  
+  //MARK: CPU Compute
+  
+  private func CPUCompute(input: [[Float]]) -> ([[Float]], [[Float]]) {
+    let start = [Float](count: hiddenDim, repeatedValue: 0.0)
+    let T = input.count;
+    var layers = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    
+    layers[0] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
+      y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
+    
+    for t in Range(start: 1, end: T) {
+      layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
+        y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
+    }
+    
+    if (activationFunction == 1) {
+      return CPUSigmoid(T, layers: layers)
+    }
+    else if (activationFunction == 2) {
+      return CPUTanh(T, layers: layers)
+    }
+    else {
+      return CPURelu(T, layers: layers)
+    }
+  }
+  
+  //MARK: CPU Actvation Function Computation
+  
+  private func CPUSigmoid(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = sigmoid(layers[t])
+      o[t] =  softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    }
+    
+    return (s, o)
+  }
+  
+  private func CPUTanh(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = tanh(layers[t])
+      o[t] =  softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    }
+    
+    return (s, o)
+  }
+  
+  private func CPURelu(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
+    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    
+    for t in Range(start: 0, end: T) {
+      s[t] = relu(layers[t])
+      o[t] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
     }
     
     return (s, o)
