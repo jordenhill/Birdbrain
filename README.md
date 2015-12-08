@@ -1,5 +1,5 @@
 # Birdbrain
-A neural network framework written in Swift. The feedforward neural network is loosely based on the 
-neural net as implemented in [Neural Networks and Deep Learning](https://github.com/mnielsen/neural-networks-and-deep-learning)
+A neural network library written in Swift. The feedforward neural network is loosely based on the 
+neural net as implemented in [Neural Networks and Deep Learning](https://github.com/mnielsen/neural-networks-and-deep-learning). The Recurrent Neural Network is based on the implementation in [Recurrent Neural Networks Tutorial, Part 2 – Implementing a RNN with Python, Numpy and Theano](http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-2-implementing-a-language-model-rnn-with-python-numpy-and-theano/). The Long Short Term Memory Network is based on the LSTM network as described in [A Critical Review of Recurrent Neural Networks for Sequence Learning](http://arxiv.org/pdf/1506.00019v4.pdf)
 
-This isn't really for any immediate use in an iOS or OSX application at the moment, simply to practice developing and experimenting with neural nets in Swift, and using the Accelerate framework and the MEtal API for computing and GPGPU functions. If you find any bugs or simply want to contribute, feel free to join in!
+This isn't really for any immediate use in an iOS or OSX application at the moment, simply to practice developing and experimenting with neural nets in Swift, and using the Accelerate framework and the Metal API for computing and GPGPU functions. If you find any bugs or simply want to contribute, feel free to join in!
