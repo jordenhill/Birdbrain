@@ -46,14 +46,14 @@ public class LSTMNetwork {
   
   private func GPUCompute(input: [[Float]]) -> ([[Float]], [[Float]], [[Float]]) {
     let T = input.count;
-    let start = [Float](count: memCellCount, repeatedValue: 0.0)
-    var g = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var f = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var i = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var s = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var h = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var y = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    let start: [Float] = (1...memCellCount).map{_ in 0.0}
+    var g: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var f: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var i: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var o: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var s: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var h: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var y: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
     
     g[0] = mtlTanh(mtlAdd(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
       y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))
@@ -85,14 +85,14 @@ public class LSTMNetwork {
   
   private func CPUCompute(input: [[Float]]) -> ([[Float]], [[Float]], [[Float]]) {
     let T = input.count;
-    let start = [Float](count: memCellCount, repeatedValue: 0.0)
-    var g = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var f = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var i = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var s = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var h = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
-    var y = [[Float]](count: T, repeatedValue: [Float](count: memCellCount, repeatedValue: 0.0))
+    let start: [Float] = (1...memCellCount).map{_ in 0.0}
+    var g: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var f: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var i: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var o: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var s: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var h: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
+    var y: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
     
     g[0] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
       y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))

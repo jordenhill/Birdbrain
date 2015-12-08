@@ -44,7 +44,7 @@ func add(x: [Float], y: [Float]) -> [Float] {
   - Returns: A vector containing the sum of the vector and scalar.
 */
 func add(x: [Float], var c: Float) -> [Float] {
-  var result = [Float](count : x.count, repeatedValue : 0.0)
+  var result: [Float] = (1...x.count).map{_ in 0.0}
   
   vDSP_vsadd(x, 1, &c, &result, 1, vDSP_Length(x.count))
   
@@ -74,7 +74,7 @@ func sub(x: [Float], y: [Float]) -> [Float] {
 */
 func sub(A: [Float], c: Float) -> [Float] {
   var result = [Float](A)
-  let operand = [Float](count: A.count, repeatedValue: c)
+  let operand: [Float] = (1...A.count).map{_ in c}
 
   vDSP_vsub(operand, 1, A, 1, &result, 1, vDSP_Length(A.count))
   
@@ -90,11 +90,11 @@ func sub(A: [Float], c: Float) -> [Float] {
 */
 func mul(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
-  var results = [Float](count: x.count, repeatedValue: 0.0)
+  var result: [Float] = (1...x.count).map{_ in 0.0}
   
-  vDSP_vmul(x, 1, y, 1, &results, 1, vDSP_Length(x.count))
+  vDSP_vmul(x, 1, y, 1, &result, 1, vDSP_Length(x.count))
     
-  return results
+  return result
 }
 
 /** Multiply a vector x by a scalar y.
@@ -103,7 +103,7 @@ func mul(x: [Float], y: [Float]) -> [Float] {
   - Returns: The product of vector x multiplied elementwise by scalar c.
 */
 func mul(x: [Float], var y: Float) -> [Float] {
-  var result = [Float](count : x.count, repeatedValue : 0.0)
+  var result: [Float] = (1...x.count).map{_ in 0.0}
   
   vDSP_vsmul(x, 1, &y, &result, 1, vDSP_Length(x.count))
   
@@ -120,8 +120,8 @@ func mul(x: [Float], var y: Float) -> [Float] {
 */
 public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
   precondition(Int(n) == x.count, "Number of columns in matrix A must equal length of vector x.")
-  var results = [Float](count: Int(m), repeatedValue: 0.0)
-    
+  var results: [Float] = (1...Int(m)).map{_ in 0.0}
+
   cblas_sgemv(CblasRowMajor, CblasNoTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
     
   return results

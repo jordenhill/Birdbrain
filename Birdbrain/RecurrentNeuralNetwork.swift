@@ -25,9 +25,11 @@ public class RecurrentNeuralNetwork {
     self.inputDim = inputDim
     self.hiddenDim = hiddenDim
     self.activationFunction = activationFunction
+    let start = NSDate()
     whx = (1...hiddenDim * inputDim).map{_ in initRand(inputDim)}
     why = (1...inputDim * hiddenDim).map{_ in initRand(inputDim)}
     whh = (1...hiddenDim * hiddenDim).map{_ in initRand(hiddenDim)}
+    print(NSDate().timeIntervalSinceDate(start))
   }
   
   //MARK: Feedforward
@@ -51,15 +53,15 @@ public class RecurrentNeuralNetwork {
   //MARK: GPU Compute
   
   private func GPUCompute(input: [[Float]]) -> ([[Float]], [[Float]]) {
-    let start = [Float](count: hiddenDim, repeatedValue: 0.0)
+    let start: [Float] = (1...hiddenDim).map{_ in 0.0}
     let T = input.count;
-    var layers = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var layers: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     
     layers[0] = mtlAdd(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
       y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
     
     for t in Range(start: 1, end: T) {
-      layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
+      layers[t] = mtlAdd(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
         y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
     }
     
@@ -77,8 +79,8 @@ public class RecurrentNeuralNetwork {
   //MARK: GPU Activation Function Computation
   
   private func GPUSigmoid(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = mtlSigmoid(layers[t])
@@ -89,8 +91,8 @@ public class RecurrentNeuralNetwork {
   }
   
   private func GPUTanh(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = mtlTanh(layers[t])
@@ -101,8 +103,8 @@ public class RecurrentNeuralNetwork {
   }
   
   private func GPURelu(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = mtlRelu(layers[t])
@@ -116,9 +118,9 @@ public class RecurrentNeuralNetwork {
   //MARK: CPU Compute
   
   private func CPUCompute(input: [[Float]]) -> ([[Float]], [[Float]]) {
-    let start = [Float](count: hiddenDim, repeatedValue: 0.0)
+    let start: [Float] = (1...hiddenDim).map{_ in 0.0}
     let T = input.count;
-    var layers = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
+    var layers: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     
     layers[0] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
       y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
@@ -142,8 +144,8 @@ public class RecurrentNeuralNetwork {
   //MARK: CPU Actvation Function Computation
   
   private func CPUSigmoid(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = sigmoid(layers[t])
@@ -154,8 +156,8 @@ public class RecurrentNeuralNetwork {
   }
   
   private func CPUTanh(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = tanh(layers[t])
@@ -166,8 +168,8 @@ public class RecurrentNeuralNetwork {
   }
   
   private func CPURelu(T: Int, layers: [[Float]]) -> ([[Float]], [[Float]]) {
-    var s = [[Float]](count: T, repeatedValue: [Float](count: hiddenDim, repeatedValue: 0.0))
-    var o = [[Float]](count: T, repeatedValue: [Float](count: inputDim, repeatedValue: 0.0))
+    var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
+    var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
     for t in Range(start: 0, end: T) {
       s[t] = relu(layers[t])
