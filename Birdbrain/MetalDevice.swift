@@ -8,7 +8,7 @@ import Metal
 func initMetal() -> (MTLDevice, MTLLibrary, MTLCommandBuffer, MTLComputeCommandEncoder) {
   let device = MTLCreateSystemDefaultDevice()
   let commandQueue = device!.newCommandQueue()
-  let library = device!.newDefaultLibrary()
+  let library = device?.newDefaultLibrary()
   let commandBuffer = commandQueue.commandBuffer()
   let commandEncoder = commandBuffer.computeCommandEncoder()
         
@@ -19,15 +19,15 @@ func initMetal() -> (MTLDevice, MTLLibrary, MTLCommandBuffer, MTLComputeCommandE
 
 func performElementwiseFunction(function_name: String, vector: [Float]) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let sigmoidFunction = library.newFunctionWithName(function_name)
+  let function = library.newFunctionWithName(function_name)
   let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
+  sigmoidPipelineDescriptor.computeFunction = function
   //let computePipelineErrors = NSErrorPointer()
   var computePipelineState:MTLComputePipelineState? = nil
   var output = [Float](count: vector.count, repeatedValue: 0.0)
   
   do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(sigmoidFunction!)
+    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
   } catch {
     print("catching..")
   }
@@ -44,6 +44,8 @@ func performElementwiseFunction(function_name: String, vector: [Float]) -> [Floa
   let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
   let numThreadgroups = MTLSize(width:(vector.count+threadExecutionWidth)/threadExecutionWidth,
     height: 1, depth: 1)
+  computePipelineState?.threadExecutionWidth
+  computePipelineState?.maxTotalThreadsPerThreadgroup
   
   commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
   commandEncoder.endEncoding()
@@ -62,15 +64,15 @@ func performElementwiseFunction(function_name: String, vector: [Float]) -> [Floa
 
 func performActivationFunction(function_name: String, input: [Float]) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let sigmoidFunction = library.newFunctionWithName(function_name)
+  let function = library.newFunctionWithName(function_name)
   let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
+  sigmoidPipelineDescriptor.computeFunction = function
   //let computePipelineErrors = NSErrorPointer()
   var computePipelineState:MTLComputePipelineState? = nil
   var output = [Float](count: input.count, repeatedValue: 0.0)
     
   do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(sigmoidFunction!)
+    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
   } catch {
     print("catching..")
   }
@@ -101,19 +103,69 @@ func performActivationFunction(function_name: String, input: [Float]) -> [Float]
   return output
 }
 
+//MARK: Matrix-Vector Function
+
+func performMatVecFunction(functionName: String, matrix: [Float], m: Int, n: Int,
+  vector: [Float]) -> [Float] {
+  
+    let (device, library, commandBuffer, commandEncoder) = initMetal()
+    let function = library.newFunctionWithName(functionName)
+    let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
+    sigmoidPipelineDescriptor.computeFunction = function
+    //let computePipelineErrors = NSErrorPointer()
+    var computePipelineState:MTLComputePipelineState? = nil
+    var outputVector: [Float] = (1...m).map{_ in 0.0}
+  
+    do {
+      computePipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("catching..")
+    }
+  
+    let matrixBuffer = createBuffer(matrix, device: device)
+    let vectorBuffer = createBuffer(vector, device: device)
+    let rowBuffer = createScalarBuffer(m, device: device)
+    let colBuffer = createScalarBuffer(n, device: device)
+    let outputBuffer = createBuffer(outputVector, device: device)
+  
+    commandEncoder.setBuffer(matrixBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(rowBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(colBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 4)
+    commandEncoder.setComputePipelineState(computePipelineState!)
+  
+    let threadExecutionWidth = computePipelineState!.threadExecutionWidth
+    let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
+    let numThreadgroups = MTLSize(width:(m + threadExecutionWidth) /
+      threadExecutionWidth, height: 1, depth: 1)
+  
+    commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
+    commandEncoder.endEncoding()
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+  
+    let data = NSData(bytesNoCopy: outputBuffer.contents(),
+      length: vector.count*sizeof(Float), freeWhenDone: false)
+  
+    data.getBytes(&outputVector, length: m * sizeof(Float))
+  
+    return outputVector
+}
+
 //MARK: Vector-Vector Function
 
 func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Float]) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let sigmoidFunction = library.newFunctionWithName(functionName)
+  let function = library.newFunctionWithName(functionName)
   let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
+  sigmoidPipelineDescriptor.computeFunction = function
   //let computePipelineErrors = NSErrorPointer()
   var computePipelineState:MTLComputePipelineState? = nil
-  var outputVector = [Float](count: vectorX.count, repeatedValue: 0.0)
+  var outputVector: [Float] = (1...vectorX.count).map{_ in 0.0}
     
   do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(sigmoidFunction!)
+    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
   } catch {
     print("catching..")
   }
@@ -149,15 +201,15 @@ func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Flo
 
 func performVecScalFunction(functionName: String, vector: [Float], scalar: Float) -> [Float] {
   let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let sigmoidFunction = library.newFunctionWithName(functionName)
+  let function = library.newFunctionWithName(functionName)
   let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = sigmoidFunction
+  sigmoidPipelineDescriptor.computeFunction = function
   //let computePipelineErrors = NSErrorPointer()
   var computePipelineState:MTLComputePipelineState? = nil
   var outputVector = [Float](count: vector.count, repeatedValue: 0.0)
     
   do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(sigmoidFunction!)
+    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
   } catch {
     print("catching..")
   }
@@ -169,14 +221,15 @@ func performVecScalFunction(functionName: String, vector: [Float], scalar: Float
   commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 0)
   commandEncoder.setBuffer(scalarBuffer, offset: 0, atIndex: 1)
   commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
-  commandEncoder.setComputePipelineState(computePipelineState!)
-    
+  
   let threadExecutionWidth = computePipelineState!.threadExecutionWidth
   let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
   let numThreadgroups = MTLSize(width:(vector.count + threadExecutionWidth) /
     threadExecutionWidth, height: 1, depth: 1)
   
+  commandEncoder.setComputePipelineState(computePipelineState!)
   commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
+  
   commandEncoder.endEncoding()
   commandBuffer.commit()
   commandBuffer.waitUntilCompleted()
@@ -201,6 +254,13 @@ func createBuffer(var vector: [Float], device: MTLDevice) -> MTLBuffer {
 
 func createScalarBuffer(var scalar: Float, device: MTLDevice) -> MTLBuffer {
   let byteLength = sizeof(Float)
+  
+  return device.newBufferWithBytes(&scalar, length: byteLength,
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+}
+
+func createScalarBuffer(var scalar: Int, device: MTLDevice) -> MTLBuffer {
+  let byteLength = sizeof(Int)
   
   return device.newBufferWithBytes(&scalar, length: byteLength,
     options: MTLResourceOptions.CPUCacheModeDefaultCache)

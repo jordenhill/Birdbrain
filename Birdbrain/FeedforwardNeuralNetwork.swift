@@ -41,6 +41,8 @@ public class FeedfowardNeuralNetwork {
       weights.append(weight)
     }
   }
+  
+  //MARK: Getters
     
   /**Return the weights of the network.
     - Returns: An array of the network's weight values.
@@ -62,66 +64,93 @@ public class FeedfowardNeuralNetwork {
   public func getNetworkSize() -> Int {
     return numLayers
   }
+  
+  //MARK: Forward pass
     
   /**Perform a forward propagation on the network using the given input.
    - Parameter input: The input to the network.
    - Returns: An array of the activations at each layer of the network.
   */
   public func feedforward(input: [Float]) -> [[Float]] {
+    if (useMetal) { //Use Metal GPU functions
+      return GPUFeedforward(input)
+    }
+    else { //Use Accelerate CPU functions.
+      return CPUFeedforward(input)
+    }
+  }
+  
+  
+  /**Use Metal GPU functions to perform a forward pass.
+   - Parameter input: The input to the network.
+   - Returns: An array of the activations at each layer of the network.
+  */
+  private func GPUFeedforward(input: [Float]) -> [[Float]] {
+    var a = [[Float]]()
+    var activation = input
+    var layer = 1
+
+    for (b,w) in zip(biases,weights) {
+      let n = sizes[layer - 1]
+      let m = sizes[layer]
+      
+      if (activationFunction == 1) { //Sigmoid
+        a.append(mtlSigmoid(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+      }
+      else if (activationFunction == 2) { //Hyperbolic tangent
+        a.append(mtlTanh(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+      }
+      else if (activationFunction == 3) { //Rectified Linear
+        a.append(mtlRelu(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
+      }
+      else {
+        print("No appropriate activation function entered.")
+      }
+      
+      layer += 1
+      
+      activation = a[a.endIndex - 1]
+    }
+    
+    return a
+  }
+  
+  /**Use CPU functions to perform a forward pass.
+   - Parameter input: The input to the network.
+   - Returns: An array of the activations at each layer of the network.
+  */
+  private func CPUFeedforward(input: [Float]) -> [[Float]] {
     var a = [[Float]]()
     var activation = input
     var layer = 1
     
-    if (useMetal) { //Use Metal GPU functions
-      for (b,w) in zip(biases,weights) {
-        let n = sizes[layer - 1]
-        let m = sizes[layer]
-                    
-        if (activationFunction == 1) { //Sigmoid
-          a.append(mtlSigmoid(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else if (activationFunction == 2) { //Hyperbolic tangent
-          a.append(mtlTanh(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else if (activationFunction == 3) { //Rectified Linear
-          a.append(mtlRelu(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else {
-          print("No appropriate activation function entered.")
-        }
-                    
-        layer += 1
-        
-        activation = a[a.endIndex - 1]
+    for (b,w) in zip(biases,weights) {
+      let n = sizes[layer - 1]
+      let m = sizes[layer]
+      
+      if (activationFunction == 1) { //Sigmoid
+        a.append(sigmoid(add(mvMul(w, m: m, n: n, x: activation), y: b)))
       }
-    }
-    else { //Use Accelerate CPU functions.
-      for (b,w) in zip(biases,weights) {
-        let n = sizes[layer - 1]
-        let m = sizes[layer]
-        
-        if (activationFunction == 1) { //Sigmoid
-          a.append(sigmoid(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else if (activationFunction == 2) { //Hyperbolic tangent
-          a.append(tanh(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else if (activationFunction == 3) { //Rectified Linear
-          a.append(relu(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-        }
-        else {
-          print("No appropriate activation function entered.")
-        }
-                    
-        layer += 1
-        
-        activation = a[a.endIndex - 1]
+      else if (activationFunction == 2) { //Hyperbolic tangent
+        a.append(tanh(add(mvMul(w, m: m, n: n, x: activation), y: b)))
       }
+      else if (activationFunction == 3) { //Rectified Linear
+        a.append(relu(add(mvMul(w, m: m, n: n, x: activation), y: b)))
+      }
+      else {
+        print("No appropriate activation function entered.")
+      }
+      
+      layer += 1
+      
+      activation = a[a.endIndex - 1]
     }
-
+    
     return a
   }
-    
+  
+  //MARK: Backward pass
+  
   /**Perform a backward propagation on the network.
     - Parameter input: The input to the network.
     - Parameter target: Target output of the network.

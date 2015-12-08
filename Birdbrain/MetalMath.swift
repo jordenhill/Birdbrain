@@ -68,6 +68,17 @@ func mtlMul(v: [Float], c: Float) -> [Float] {
   return performVecScalFunction("scalar_multiply", vector: v, scalar: c)
 }
 
+/** Multiply a matrix by a vector.
+  - Parameter A: An m by n matrix.
+  - Parameter m: Number of rows in matrix A.
+  - Parameter n: Number of columns in matrix A.
+  - Parameter x: Vector x.
+  - Returns: The matrix vector product of Ax.
+*/
+func mtlMvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
+  return performMatVecFunction("matrixvector_multiply", matrix: A, m: m, n: n, vector: x)
+}
+
 //MARK: Division
 
 /** Divide a vector x by a vector y.
