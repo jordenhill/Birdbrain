@@ -120,6 +120,16 @@ public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
   return results
 }
 
+public func tmvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
+  precondition(Int(n) == x.count, "Number of columns in matrix A must equal length of vector x.")
+  var results: [Float] = (1...Int(m)).map{_ in 0.0}
+  
+  cblas_sgemv(CblasRowMajor, CblasTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
+  
+  return results
+}
+
+
 //MARK: Division
 
 /** Divide a vector x by a vector y.

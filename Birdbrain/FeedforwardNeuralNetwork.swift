@@ -232,17 +232,18 @@ public class FeedfowardNeuralNetwork {
     deltaW[deltaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
     
     for (var l = 2; l < numLayers; l++) {
-      let z = zVals[zVals.endIndex - l + 1]
-      let mat = outer(weights[weights.endIndex - l + 1], y: delta)
+      let z = zVals[zVals.endIndex - l]
+      let vec = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
+        n: sizes[sizes.endIndex - l + 1], x: delta)
       
       if (activationFunction == 1) {
-        delta = mvMul(mat, m: sizes[l - 1], n: sizes[l], x: sigmoidPrime(z))
+        delta = mul(vec, y: sigmoidPrime(z))
       }
       else if (activationFunction == 2) {
-        delta = mvMul(mat, m: sizes[l - 1], n: sizes[l], x: tanhPrime(z))
+        delta = mvMul(mat, m: sizes[l], n: sizes[l - 1], x: tanhPrime(z))
       }
       else {
-        delta = mvMul(mat, m: sizes[l - 1], n:sizes[l], x: reluPrime(z))
+        delta = mvMul(mat, m: sizes[l], n:sizes[l - 1], x: reluPrime(z))
       }
       
       deltaB[deltaB.endIndex - l] = delta
