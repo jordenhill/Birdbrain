@@ -21,7 +21,7 @@ kernel void tanh(device float *x [[buffer(0)]], device float *y [[buffer(1)]],
 
 kernel void relu(device float *x [[buffer(0)]], device float *y [[buffer(1)]],
                  uint id [[thread_position_in_grid]]) {
-  y[id] = max(x[id], 0.0);
+  y[id] = fmax(x[id], 0.0);
 }
 
 kernel void sigmoid_prime(device float *x[[buffer(0)]], device float *y [[buffer(1)]],
@@ -69,17 +69,23 @@ kernel void scalar_multiply(device float *A [[buffer(0)]], constant float *c [[b
   y[id] = A[id] * *c;
 }
 
-//TODO: Optimize mvmul function.
+typedef struct
+{
+  ushort m, n;
+} MetalMatrixDim;
 
 kernel void matrixvector_multiply(device float *A [[buffer(0)]], device float *x [[buffer(1)]],
-                                  device int *m [[buffer(2)]], device int *n [[buffer(3)]],
-                                  device float *y [[buffer(4)]], uint id[[thread_position_in_grid]]) {
-
-  float sum = 0.0f;
-  for (int k = 0; k < *n; k++) {
-    sum += A[id * *m + k] * x[k];
-  }
+                                  constant MetalMatrixDim& dims [[ buffer(2) ]],
+                                  device float *y [[buffer(3)]],
+                                  uint id[[thread_position_in_grid]]) {
+  int m = (int) dims.m;
+  int n = (int) dims.n;
   
+  float sum = 0.0f;
+  for (int k = 0; k < n; k++) {
+      sum += A[id * m + k] * x[k];
+  }
+    
   y[id] = sum;
 }
 
@@ -107,4 +113,3 @@ kernel void neg(device float *x [[buffer(0)]], device float *y [[buffer(1)]],
                 uint id [[thread_position_in_grid]]) {
   y[id] = -x[id];
 }
-

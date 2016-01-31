@@ -184,7 +184,7 @@ func mtlReluPrime(x: [Float]) -> [Float] {
   - Returns: A vector y = (e^z / sum(e^z))
 */
 func mtlSoftmax(z: [Float]) -> [Float] {
-  let x = mtlExp(mtlSub(z, c: z.maxElement()!))
+  let x = exp(sub(z, c: z.maxElement()!))
   return performVecScalFunction("scalar_divide", vector: x, scalar: sum(x))
 }
 

@@ -32,8 +32,10 @@ func performElementwiseFunction(function_name: String, vector: [Float]) -> [Floa
     print("catching..")
   }
   
-  let inputBuffer = createBuffer(vector, device: device)
-  let outputBuffer = createBuffer(output, device: device)
+  let inputBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  let outputBuffer = device.newBufferWithLength(output.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
   
   commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
   commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
@@ -77,8 +79,10 @@ func performActivationFunction(function_name: String, input: [Float]) -> [Float]
     print("catching..")
   }
         
-  let inputBuffer = createBuffer(input, device: device)
-  let outputBuffer = createBuffer(output, device: device)
+  let inputBuffer = device.newBufferWithLength(input.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  let outputBuffer = device.newBufferWithLength(output.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
   
   commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
   commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
@@ -86,7 +90,7 @@ func performActivationFunction(function_name: String, input: [Float]) -> [Float]
         
   let threadExecutionWidth = computePipelineState!.threadExecutionWidth
         
-  let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
+  let threadsPerGroup = MTLSize(width: threadExecutionWidth,height:1,depth:1)
   let numThreadgroups = MTLSize(width:(input.count+threadExecutionWidth)/threadExecutionWidth,
     height: 1, depth: 1)
   
@@ -110,11 +114,12 @@ func performMatVecFunction(functionName: String, matrix: [Float], m: Int, n: Int
   
     let (device, library, commandBuffer, commandEncoder) = initMetal()
     let function = library.newFunctionWithName(functionName)
-    let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-    sigmoidPipelineDescriptor.computeFunction = function
+    let pipelineDescriptor = MTLComputePipelineDescriptor()
+    pipelineDescriptor.computeFunction = function
     //let computePipelineErrors = NSErrorPointer()
     var computePipelineState:MTLComputePipelineState? = nil
     var outputVector: [Float] = (1...m).map{_ in 0.0}
+    let dims: [UInt16] = [UInt16(m), UInt16(n)]
   
     do {
       computePipelineState = try device.newComputePipelineStateWithFunction(function!)
@@ -122,34 +127,36 @@ func performMatVecFunction(functionName: String, matrix: [Float], m: Int, n: Int
       print("catching..")
     }
   
-    let matrixBuffer = createBuffer(matrix, device: device)
-    let vectorBuffer = createBuffer(vector, device: device)
-    let rowBuffer = createScalarBuffer(m, device: device)
-    let colBuffer = createScalarBuffer(n, device: device)
-    let outputBuffer = createBuffer(outputVector, device: device)
-  
+    let matrixBuffer = device.newBufferWithLength(matrix.count * sizeof(Float),
+      options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    let vectorBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
+      options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    let dimBuffer = device.newBufferWithLength(dims.count * sizeof(UInt16),
+      options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
+      options: MTLResourceOptions.CPUCacheModeDefaultCache)
+
     commandEncoder.setBuffer(matrixBuffer, offset: 0, atIndex: 0)
     commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 1)
-    commandEncoder.setBuffer(rowBuffer, offset: 0, atIndex: 2)
-    commandEncoder.setBuffer(colBuffer, offset: 0, atIndex: 3)
-    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 4)
+    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 3)
     commandEncoder.setComputePipelineState(computePipelineState!)
+
+    let threadsPerGroup = MTLSize(width: 32, height: 1, depth:1)
+    let numThreadgroups = MTLSize(width:(256 + 31) / 32, height: 1, depth: 1)
   
-    let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-    let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
-    let numThreadgroups = MTLSize(width:(m + threadExecutionWidth) /
-      threadExecutionWidth, height: 1, depth: 1)
-  
+    let time = NSDate()
     commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
     commandEncoder.endEncoding()
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()
-  
+    print(NSDate().timeIntervalSinceDate(time))
+
     let data = NSData(bytesNoCopy: outputBuffer.contents(),
       length: vector.count*sizeof(Float), freeWhenDone: false)
-  
+    
     data.getBytes(&outputVector, length: m * sizeof(Float))
-  
+
     return outputVector
 }
 
@@ -170,19 +177,21 @@ func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Flo
     print("catching..")
   }
     
-  let vectorXBuffer = createBuffer(vectorX, device: device)
-  let vectorYBuffer = createBuffer(vectorY, device: device)
-  let outputBuffer = createBuffer(outputVector, device: device)
-    
+  let vectorXBuffer = device.newBufferWithLength(vectorX.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  let vectorYBuffer = device.newBufferWithLength(vectorY.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  
   commandEncoder.setBuffer(vectorXBuffer, offset: 0, atIndex: 0)
   commandEncoder.setBuffer(vectorYBuffer, offset: 0, atIndex: 1)
   commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
   commandEncoder.setComputePipelineState(computePipelineState!)
   
-  let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-  let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
-  let numThreadgroups = MTLSize(width:(vectorX.count + threadExecutionWidth) /
-    threadExecutionWidth, height: 1, depth: 1)
+  //let threadExecutionWidth = computePipelineState!.threadExecutionWidth
+  let threadsPerGroup = MTLSize(width: 32, height:1, depth:1)
+  let numThreadgroups = MTLSize(width: (256 + 31) / 32, height: 1, depth: 1)
   
   commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
   commandEncoder.endEncoding()
@@ -193,7 +202,7 @@ func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Flo
     length: vectorX.count*sizeof(Float), freeWhenDone: false)
   
   data.getBytes(&outputVector, length:vectorX.count * sizeof(Float))
-    
+  
   return outputVector
 }
 
@@ -213,10 +222,12 @@ func performVecScalFunction(functionName: String, vector: [Float], scalar: Float
   } catch {
     print("catching..")
   }
-  
-  let vectorBuffer = createBuffer(vector, device: device)
+
+  let vectorBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
   let scalarBuffer = createScalarBuffer(scalar, device: device)
-  let outputBuffer = createBuffer(outputVector, device: device)
+  let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
     
   commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 0)
   commandEncoder.setBuffer(scalarBuffer, offset: 0, atIndex: 1)
@@ -238,18 +249,26 @@ func performVecScalFunction(functionName: String, vector: [Float], scalar: Float
     length: vector.count*sizeof(Float), freeWhenDone: false)
   
   data.getBytes(&outputVector, length:vector.count * sizeof(Float))
-    
+  
   return outputVector
 }
 
 
 //MARK: Extra Methods
 
-func createBuffer(var vector: [Float], device: MTLDevice) -> MTLBuffer {
-  let byteLength = vector.count * sizeof(Float)
-  
-  return device.newBufferWithBytes(&vector, length: byteLength,
+func createBuffer(var vector: [Float], device: MTLDevice) -> MTLBuffer {  
+  //Create a new buffer with this byte length
+  let buffer = device.newBufferWithBytes(&vector, length: vector.count * sizeof(Float),
     options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  
+  return buffer
+}
+
+func createDimBuffer(var dims: [UInt16], device: MTLDevice) -> MTLBuffer {
+
+  return device.newBufferWithBytes(&dims, length: 2 * sizeof(UInt16),
+    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+
 }
 
 func createScalarBuffer(var scalar: Float, device: MTLDevice) -> MTLBuffer {

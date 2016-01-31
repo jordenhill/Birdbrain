@@ -29,15 +29,15 @@ class BirdbrainMathTest: XCTestCase {
     }
     
     func testVectorSubtraction() {
-        XCTAssertTrue(sub(testVector1, B: testVector2) == [-2.0, -2.0], "Wrong vector - vector result")
+        XCTAssertTrue(sub(testVector1, y: testVector2) == [-2.0, -2.0], "Wrong vector - vector result")
     }
     
     func testScalarAddition() {
-        XCTAssertTrue(scalAdd(1.0, x: testVector1) == [2.0, 3.0], "Wrong scalar vector addition result")
+      XCTAssertTrue(add(testVector1, c: 1.0) == [2.0, 3.0], "Wrong scalar vector addition result")
     }
     
     func testScalarMultiplication() {
-        XCTAssertTrue(scalMul(testVector1, y: 2.0) == [2.0, 4.0], "Wrong scalar vector multiplication result")
+        XCTAssertTrue(mul(testVector1, c: 2.0) == [2.0, 4.0], "Wrong scalar vector multiplication result")
     }
     
     func testVectorVectorMultiplication() {
@@ -68,12 +68,8 @@ class BirdbrainMathTest: XCTestCase {
         XCTAssertTrue(neg(testVector1) == [-1.0, -2.0], "Wrong elementwise negation result")
     }
     
-    func testTransposition() {
-        XCTAssertTrue(trans(testMatrix1, m: 2, n: 2) == [1.0, 3.0, 2.0, 4.0], "Wrong matrix transpose result")
-    }
-    
     func testMatrixFormation() {
-        XCTAssertTrue(formMatrix(testMatrix1, B: testMatrix2) == [1.0, 2.0,  3.0,  4.0,
+        XCTAssertTrue(outer(testMatrix1, y: testMatrix2) == [1.0, 2.0,  3.0,  4.0,
                                                                   2.0, 4.0,  6.0,  8.0,
                                                                   3.0, 6.0,  9.0, 12.0,
                                                                   4.0, 8.0, 12.0, 16.0], "Wrong matrix formation result")

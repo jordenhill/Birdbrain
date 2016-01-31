@@ -38,8 +38,7 @@ public class LSTMNetwork {
       
       if (useMetal) {
         return GPUCompute(input)
-      }
-      else {
+      } else {
         return CPUCompute(input)
       }
   }
@@ -63,9 +62,9 @@ public class LSTMNetwork {
       y: mvMul(wfh, m: memCellCount, n: memCellCount, x: start)))
     o[0] = mtlSigmoid(mtlAdd(mvMul(wox, m: memCellCount, n: inputDim, x: input[0]),
       y: mvMul(woh, m: memCellCount, n: memCellCount, x: start)))
-    s[0] = mtlAdd(mtlMul(g[0], y: i[0]), y: mtlMul(s[0], y: f[0]))
-    h[0] = mtlMul(s[0], y: o[0])
-    y[0] = mtlSoftmax(s[0])
+    s[0] = add(mtlMul(g[0], y: i[0]), y: mul(s[0], y: f[0]))
+    h[0] = mul(s[0], y: o[0])
+    y[0] = softmax(s[0])
     
     for t in Range(start: 1, end: T) {
       g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
@@ -76,9 +75,9 @@ public class LSTMNetwork {
         y: mvMul(wfh, m: memCellCount, n: memCellCount, x: h[t - 1])))
       o[t] = mtlSigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[t]),
         y: mvMul(woh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-      s[t] = mtlAdd(mtlMul(g[t], y: i[t]), y: mtlMul(s[t - 1], y: f[t]))
-      h[t] = mtlMul(s[t], y: o[t])
-      y[t] = mtlSoftmax(s[t])
+      s[t] = add(mtlMul(g[t], y: i[t]), y: mul(s[t - 1], y: f[t]))
+      h[t] = mul(s[t], y: o[t])
+      y[t] = softmax(s[t])
     }
     return (s, y, h)
   }

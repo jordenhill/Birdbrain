@@ -16,15 +16,21 @@ public class RecurrentNeuralNetwork {
   var why: [Float]
   var whh: [Float]
   var activationFunction: Int
+  var bpttTruncate: Int
+  var useMetal: Bool
   
   /**Initializer for Recurrent Neural Network
     - Parameter inputDim: Dimension of inputs to RNN.
     - Parameter hiddenDim: Dimension of hidden neurons in RNN.
   */
-  public init(inputDim: Int, hiddenDim: Int, activationFunction: Int) {
+  public init(inputDim: Int, hiddenDim: Int, useMetal: Bool,
+    activationFunction: Int, bpttTruncate: Int) {
+    
     self.inputDim = inputDim
     self.hiddenDim = hiddenDim
     self.activationFunction = activationFunction
+    self.useMetal = useMetal
+    self.bpttTruncate = bpttTruncate
     let start = NSDate()
     whx = (1...hiddenDim * inputDim).map{_ in initRand(inputDim)}
     why = (1...inputDim * hiddenDim).map{_ in initRand(inputDim)}
@@ -39,15 +45,85 @@ public class RecurrentNeuralNetwork {
    - Parameter useMetal: Indicate whether to use metal GPU functions.
    - Returns: An array tuple of the hidden states and outputs.
   */
-  public func feedforward(input: [[Float]], useMetal: Bool)
+  public func feedforward(input: [[Float]])
     -> ([[Float]], [[Float]]){
       
       if (useMetal) { //Use GPU
         return GPUCompute(input)
-      }
-      else { //Use CPU
+      } else { //Use CPU
         return CPUCompute(input)
       }
+  }
+  
+  /**Do a feedforward pass and return the prediction.
+   - Parameter input: Input array to RNN.
+   - Returns: An array containing the predicted values
+   */
+  public func predict(input: [[Float]]) -> [Int] {
+    let (o, _) = feedforward(input)
+    return maxIndex(o)
+  }
+  
+  public func calculateLoss(input: [[Float]], target: [[Float]], numExamples: Int) -> Float {
+    var (o, _) = feedforward(input)
+    var L = [Float]()
+    
+    for i in Range(start: 0, end: target.count) {
+      L.append(sum(mul(target[i], y: log(o[i]))))
+    }
+    
+    return sum(L) / Float(numExamples)
+  }
+  
+  public func backprop(input: [[Float]], target: [[Float]], learningRate: Float) {
+    let T = target.count
+    var (o, s) = feedforward(input)
+    var dwhx: [Float] = (1...whx.count).map {_ in 0.0}
+    var dwhy: [Float] = (1...why.count).map {_ in 0.0}
+    var dwhh: [Float] = (1...whh.count).map {_ in 0.0}
+    var dhnext: [Float] = (1...s[0].count).map {_ in 0.0}
+    var dhraw: [Float]
+    
+    for t in (0..<T).reverse() {
+      var deltaO = o[t]
+      
+      for i in target[t] {
+        let index = Int(i)
+        deltaO[index] -= 1
+      }
+      
+      dwhy = outer(deltaO, y: s[t])
+      
+      let dh = add(mvMul(dwhy, m: inputDim, n: hiddenDim, x: deltaO), y: dhnext)
+      
+      if (useMetal) {
+        if (activationFunction == 1) {
+          dhraw = mul(mtlSigmoidPrime(s[t]), y: dh)
+        } else if (activationFunction == 2) {
+          dhraw = mul(mtlTanhPrime(s[t]), y: dh)
+        } else {
+          dhraw = mul(mtlReluPrime(s[t]), y: dh)
+        }
+      } else {
+        if (activationFunction == 1) {
+          dhraw = mul(sigmoidPrime(s[t]), y: dh)
+        } else if (activationFunction == 2) {
+          dhraw = mul(tanhPrime(s[t]), y: dh)
+        } else {
+          dhraw = mul(reluPrime(s[t]), y: dh)
+        }
+      }
+      
+      dwhx = outer(dhraw, y: input[t])
+      dwhh = outer(dhraw, y: s[t - 1])
+      
+      dhnext = mvMul(dwhh, m: hiddenDim, n: hiddenDim, x: dhraw)
+    }
+    
+    //Update weights
+    whx = sub(whx, y: mul(dwhx, c: learningRate))
+    why = sub(why, y: mul(dwhy, c: learningRate))
+    whh = sub(whh, y: mul(dwhh, c: learningRate))
   }
   
   //MARK: GPU Compute
@@ -57,21 +133,19 @@ public class RecurrentNeuralNetwork {
     let T = input.count;
     var layers: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     
-    layers[0] = mtlAdd(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
+    layers[0] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
       y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
     
     for t in Range(start: 1, end: T) {
-      layers[t] = mtlAdd(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
+      layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
         y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
     }
     
     if (activationFunction == 1) {
       return GPUSigmoid(T, layers: layers)
-    }
-    else if (activationFunction == 2) {
+    } else if (activationFunction == 2) {
       return GPUTanh(T, layers: layers)
-    }
-    else {
+    } else {
       return GPURelu(T, layers: layers)
     }
   }
@@ -132,11 +206,9 @@ public class RecurrentNeuralNetwork {
     
     if (activationFunction == 1) {
       return CPUSigmoid(T, layers: layers)
-    }
-    else if (activationFunction == 2) {
+    } else if (activationFunction == 2) {
       return CPUTanh(T, layers: layers)
-    }
-    else {
+    } else {
       return CPURelu(T, layers: layers)
     }
   }

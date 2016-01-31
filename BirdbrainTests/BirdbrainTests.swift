@@ -13,7 +13,7 @@ class BirdbrainTests: XCTestCase {
     let netSize: [Int] = [2,3,1]
     let input: [Float] = [1.0, 0.0]
     
-    func testSigmoidCreation() {
+    /*func testSigmoidCreation() {
         XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 0, activationFunction: 1), "Creation of sigmoid network failed")
     }
     
@@ -35,7 +35,7 @@ class BirdbrainTests: XCTestCase {
     
     func testMetalReluCreation() {
         XCTAssertNotNil(FeedfowardNeuralNetwork(sizes: netSize, useMetal: 1, activationFunction: 3), "Creation of metal relu network failed")
-    }
+    }*/
     
     
 }

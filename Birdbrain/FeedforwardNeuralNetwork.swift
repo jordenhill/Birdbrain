@@ -86,8 +86,8 @@ public class FeedfowardNeuralNetwork {
    - Returns: An array of the activations at each layer of the network.
   */
   private func GPUFeedforward(input: [Float]) -> [[Float]] {
-    var a = [[Float]]()
-    var activation = input
+    var activations = [[Float]]()
+    var layerInputs = input
     var layer = 1
 
     for (b,w) in zip(biases,weights) {
@@ -95,24 +95,21 @@ public class FeedfowardNeuralNetwork {
       let m = sizes[layer]
       
       if (activationFunction == 1) { //Sigmoid
-        a.append(mtlSigmoid(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else if (activationFunction == 2) { //Hyperbolic tangent
-        a.append(mtlTanh(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else if (activationFunction == 3) { //Rectified Linear
-        a.append(mtlRelu(mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else {
+        activations.append(mtlSigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else if (activationFunction == 2) { //Hyperbolic tangent
+        activations.append(mtlTanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else if (activationFunction == 3) { //Rectified Linear
+        activations.append(mtlRelu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else {
         print("No appropriate activation function entered.")
       }
       
       layer += 1
       
-      activation = a[a.endIndex - 1]
+      layerInputs = activations[activations.endIndex - 1]
     }
     
-    return a
+    return activations
   }
   
   /**Use CPU functions to perform a forward pass.
@@ -120,8 +117,8 @@ public class FeedfowardNeuralNetwork {
    - Returns: An array of the activations at each layer of the network.
   */
   private func CPUFeedforward(input: [Float]) -> [[Float]] {
-    var a = [[Float]]()
-    var activation = input
+    var activations = [[Float]]()
+    var layerInputs = input
     var layer = 1
     
     for (b,w) in zip(biases,weights) {
@@ -129,24 +126,21 @@ public class FeedfowardNeuralNetwork {
       let m = sizes[layer]
       
       if (activationFunction == 1) { //Sigmoid
-        a.append(sigmoid(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else if (activationFunction == 2) { //Hyperbolic tangent
-        a.append(tanh(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else if (activationFunction == 3) { //Rectified Linear
-        a.append(relu(add(mvMul(w, m: m, n: n, x: activation), y: b)))
-      }
-      else {
+        activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else if (activationFunction == 2) { //Hyperbolic tangent
+        activations.append(tanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else if (activationFunction == 3) { //Rectified Linear
+        activations.append(relu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+      } else {
         print("No appropriate activation function entered.")
       }
       
       layer += 1
       
-      activation = a[a.endIndex - 1]
+      layerInputs = activations[activations.endIndex - 1]
     }
     
-    return a
+    return activations
   }
   
   //MARK: Backward pass
@@ -162,19 +156,13 @@ public class FeedfowardNeuralNetwork {
         
     if (useMetal) {
       (nablaB, nablaW) = mtlBackprop(input, target: target)
-            
-      for l in Range(start:0, end: numLayers - 1) {
-        weights[l] = mtlSub(weights[l], y: mtlMul(nablaW[l], c: learningRate))
-        biases[l] = mtlSub(biases[l], y: mtlMul(nablaB[l], c: learningRate))
-      }
-    }
-    else {
+    } else {
       (nablaB, nablaW) = backprop(input, target: target)
-            
-      for l in Range(start:0, end: numLayers - 1) {
-        weights[l] = sub(weights[l], y: mul(nablaW[l], y: learningRate))
-        biases[l] = sub(biases[l], y: mul(nablaB[l], y: learningRate))
-      }
+    }
+    
+    for l in Range(start:0, end: numLayers - 1) {
+      weights[l] = sub(weights[l], y: mul(nablaW[l], c: learningRate))
+      biases[l] = sub(biases[l], y: mul(nablaB[l], c: learningRate))
     }
   }
   
@@ -192,9 +180,9 @@ public class FeedfowardNeuralNetwork {
     var m: Int
     var n: Int
     var zVals = [[Float]]()
-    var activations = [[Float]]()
+    var activations: [[Float]] = [input]
     var activation = input
-        
+    
     for w in weights {
       deltaW.append([Float](count: w.count, repeatedValue: 0.0))
     }
@@ -210,7 +198,7 @@ public class FeedfowardNeuralNetwork {
       let z = add(mvMul(w, m: m, n: n, x: activation), y: b)
       
       zVals.append(z)
-                
+      
       if (activationFunction == 1) {
         activation = sigmoid(z)
       }
@@ -220,12 +208,12 @@ public class FeedfowardNeuralNetwork {
       else {
         activation = relu(z)
       }
-            
+      
       layer += 1
       
       activations.append(activation)
     }
-        
+    
     //Create delta for last layer based on output, do a backward pass
     if (activationFunction == 1) {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
@@ -239,30 +227,28 @@ public class FeedfowardNeuralNetwork {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: reluPrime(zVals[zVals.endIndex - 1]))
     }
-        
+    
     deltaB[deltaB.endIndex - 1] = delta
-    deltaW[deltaW.endIndex - 1] = formMatrix(activations[activations.endIndex - 2], y: delta)
-        
+    deltaW[deltaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
+    
     for (var l = 2; l < numLayers; l++) {
-      let z = zVals[zVals.endIndex - l]
+      let z = zVals[zVals.endIndex - l + 1]
+      let mat = outer(weights[weights.endIndex - l + 1], y: delta)
       
       if (activationFunction == 1) {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n: sizes[l - 1], x: sigmoidPrime(z))
+        delta = mvMul(mat, m: sizes[l - 1], n: sizes[l], x: sigmoidPrime(z))
       }
       else if (activationFunction == 2) {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n: sizes[l - 1], x: tanhPrime(z))
+        delta = mvMul(mat, m: sizes[l - 1], n: sizes[l], x: tanhPrime(z))
       }
       else {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n:sizes[l - 1], x: reluPrime(z))
+        delta = mvMul(mat, m: sizes[l - 1], n:sizes[l], x: reluPrime(z))
       }
-            
+      
       deltaB[deltaB.endIndex - l] = delta
-      deltaW[deltaW.endIndex - l] = formMatrix(delta, y: activations[activations.endIndex - l])
+      deltaW[deltaW.endIndex - l] = outer(delta, y: activations[activations.endIndex - l - 1])
     }
-        
+    
     return (deltaB, deltaW)
   }
   
@@ -280,7 +266,7 @@ public class FeedfowardNeuralNetwork {
     var m: Int
     var n: Int
     var zVals = [[Float]]()
-    var activation = input
+    var layerInput = input
     var activations = [[Float]]()
         
     for w in weights {
@@ -294,66 +280,62 @@ public class FeedfowardNeuralNetwork {
     for (b, w) in zip(biases, weights) {
       m = sizes[layer]
       n = sizes[layer - 1]
-      let z = mtlAdd(mvMul(w, m: m, n: n, x: activation), y: b)
+      let z = add(mvMul(w, m: m, n: n, x: layerInput), y: b)
 
       zVals.append(z)
                 
       if (activationFunction == 1) {
-        activation = mtlSigmoid(z)
-      }
-      else if (activationFunction == 2) {
-        activation = mtlTanh(z)
-      }
-      else {
-        activation = mtlRelu(z)
+        layerInput = mtlSigmoid(z)
+      } else if (activationFunction == 2) {
+        layerInput = mtlTanh(z)
+      } else {
+        layerInput = mtlRelu(z)
       }
             
       layer += 1
       
-      activations.append(activation)
+      activations.append(layerInput)
     }
         
     //Create delta for last layer based on output, do a backward pass
     if (activationFunction == 1) {
-      delta = mtlMul(costDerivative(activations[activations.endIndex - 1], y: target),
+      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: mtlSigmoidPrime(zVals[zVals.endIndex - 1]))
-    }
-    else if (activationFunction == 2) {
-      delta = mtlMul(costDerivative(activations[activations.endIndex - 1], y: target),
+    } else if (activationFunction == 2) {
+      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: mtlTanhPrime(zVals[zVals.endIndex - 1]))
-    }
-    else {
-      delta = mtlMul(costDerivative(activations[activations.endIndex - 1], y: target),
+    } else {
+      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: mtlReluPrime(zVals[zVals.endIndex - 1]))
     }
         
     nablaB[nablaB.endIndex - 1] = delta
-    nablaW[nablaW.endIndex - 1] = formMatrix(activations[activations.endIndex - 2], y: delta)
+    nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
         
-    for (var l = 2; l < numLayers; l++) {
-      let z = zVals[zVals.endIndex - l]
+    for currentLayer in 2...numLayers {
+      let z = zVals[zVals.endIndex - currentLayer]
             
       if (activationFunction == 1) {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n: sizes[l - 1], x: mtlSigmoidPrime(z))
-      }
-      else if (activationFunction == 2) {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n: sizes[l - 1], x: mtlTanhPrime(z))
-      }
-      else {
-        delta = mvMul(formMatrix(weights[weights.endIndex - l + 1], y: delta), m: sizes[l - 2],
-          n: sizes[l - 1], x: mtlReluPrime(z))
+        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
+          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlSigmoidPrime(z))
+      } else if (activationFunction == 2) {
+        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
+          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlTanhPrime(z))
+      } else {
+        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
+          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlReluPrime(z))
       }
             
-      nablaB[nablaB.endIndex - l] = delta
-      nablaW[nablaW.endIndex - l] = formMatrix(delta, y: activations[activations.endIndex - l])
+      nablaB[nablaB.endIndex - currentLayer] = delta
+      nablaW[nablaW.endIndex - currentLayer] = outer(delta,
+        y: activations[activations.endIndex - currentLayer])
     }
         
     return (nablaB, nablaW)
   }
   
   //TODO: Add loss function
+  
   /** Calculate the loss of the network
     - Parameter:
     - Returns:

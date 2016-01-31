@@ -15,11 +15,7 @@ var spareReady: Bool = false
   - Returns: A single precision vector sum.
 */
 public func sum(x: [Float]) -> Float {
-  var result: Float = 0.0
-  
-  vDSP_sve(x, 1, &result, vDSP_Length(x.count))
-  
-  return result
+  return cblas_sasum(Int32(x.count), x, 1)
 }
 
 //MARK: Addition
@@ -29,7 +25,7 @@ public func sum(x: [Float]) -> Float {
   - Parameter y: Vector y.
   - Returns: A vector containing the sum of the two vectors.
 */
-func add(x: [Float], y: [Float]) -> [Float] {
+public func add(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
   var result = [Float](y)
   
@@ -38,15 +34,15 @@ func add(x: [Float], y: [Float]) -> [Float] {
   return result
 }
 
-/** Add a scalar to a vector.
+/** Add a scalar elementwise to a vector (creates a vector of the scalar and then adds them).
   - Parameter x: Vector x.
   - Parameter c: scalar c.
   - Returns: A vector containing the sum of the vector and scalar.
 */
-func add(x: [Float], var c: Float) -> [Float] {
-  var result: [Float] = (1...x.count).map{_ in 0.0}
+public func add(x: [Float], c: Float) -> [Float] {
+  var result: [Float] = (1...x.count).map{_ in c}
   
-  vDSP_vsadd(x, 1, &c, &result, 1, vDSP_Length(x.count))
+  cblas_saxpy(Int32(x.count), 1.0, x, 1, &result, 1)
   
   return result
 }
@@ -58,13 +54,12 @@ func add(x: [Float], var c: Float) -> [Float] {
   - Parameter y: Vector y.
   - Returns: A vector containing the difference of x and y.
 */
-func sub(x: [Float], y: [Float]) -> [Float] {
+public func sub(x: [Float], var y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
-  var results = [Float](x)
+
+  catlas_saxpby(Int32(y.count), 1.0, x, Int32(1), -1.0, &y, Int32(1))
   
-  vDSP_vsub(y, 1, x, 1, &results, 1, vDSP_Length(x.count))
-    
-  return results
+  return y
 }
 
 /** Subtract a scalar c from a vector x.
@@ -72,11 +67,10 @@ func sub(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: Scalar c.
   - Returns: A vector containing the difference of the scalar and the vector.
 */
-func sub(A: [Float], c: Float) -> [Float] {
-  var result = [Float](A)
-  let operand: [Float] = (1...A.count).map{_ in c}
+public func sub(x: [Float], c: Float) -> [Float] {
+  var result = (1...x.count).map{_ in c}
 
-  vDSP_vsub(operand, 1, A, 1, &result, 1, vDSP_Length(A.count))
+  catlas_saxpby(Int32(x.count), 1.0, x, 1, -1.0, &result, 1)
   
   return result
 }
@@ -88,12 +82,12 @@ func sub(A: [Float], c: Float) -> [Float] {
   - Parameter y: Vector y.
   - Returns: The product of vector x and vector y.
 */
-func mul(x: [Float], y: [Float]) -> [Float] {
+public func mul(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must have the same length.")
-  var result: [Float] = (1...x.count).map{_ in 0.0}
+  var result = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vmul(x, 1, y, 1, &result, 1, vDSP_Length(x.count))
-    
+  
   return result
 }
 
@@ -102,12 +96,11 @@ func mul(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: scalar c.
   - Returns: The product of vector x multiplied elementwise by scalar c.
 */
-func mul(x: [Float], var y: Float) -> [Float] {
-  var result: [Float] = (1...x.count).map{_ in 0.0}
+public func mul(var x: [Float], c: Float) -> [Float] {
   
-  vDSP_vsmul(x, 1, &y, &result, 1, vDSP_Length(x.count))
+  cblas_sscal(Int32(x.count), c, &x, 1)
   
-  return result
+  return x
 }
 
 /**Multiply a matrix A by a vector x.
@@ -134,7 +127,7 @@ public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
   - Parameter y: Divisor vector.
   - Returns: A vector result of x divided by y.
 */
-func div(x: [Float], y: [Float]) -> [Float] {
+public func div(x: [Float], y: [Float]) -> [Float] {
   precondition(x.count == y.count, "Vectors must be of equal length.")
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -148,7 +141,7 @@ func div(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: Scalar c.
   - Returns: A vector containing x dvidided elementwise by vector c.
 */
-func div(x: [Float], c: Float) -> [Float] {
+public func div(x: [Float], c: Float) -> [Float] {
   let divisor = [Float](count: x.count, repeatedValue: c)
   var result = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -163,7 +156,7 @@ func div(x: [Float], c: Float) -> [Float] {
   - Parameter x: Vector x.
   - Returns: A vector containing x exponentiated elementwise.
 */
-func exp(x: [Float]) -> [Float] {
+public func exp(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vvexpf(&results, x, [Int32(x.count)])
@@ -175,7 +168,7 @@ func exp(x: [Float]) -> [Float] {
   - Parameter x: Vector x.
   - Returns: A vector containing elementwise squares of vectir x.
 */
-func square(x: [Float]) -> [Float] {
+public func square(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vsq(x, 1, &results, 1, vDSP_Length(x.count))
@@ -187,42 +180,35 @@ func square(x: [Float]) -> [Float] {
   - Parameter x: Vector x.
   - Returns: An elementwise negation of vector x.
 */
-func neg(x: [Float]) -> [Float] {
+public func neg(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vneg(x, 1, &results, 1, vDSP_Length(x.count))
-    
+  
   return results
+}
+
+public func log(x: [Float]) -> [Float] {
+  var result = [Float](count: x.count, repeatedValue: 0.0)
+  
+  vvlogf(&result, x, [Int32(x.count)])
+  
+  return result
 }
 
 //MARK: Matrix manipulations
 
-/**Transpose a matrix.
-  - Parameter A: Matrix A.
-  - Parameter m: Number of rows in A.
-  - Parameter n: Number of columns in A.
-  - Returns: A transposed matrix A with m columns and n rows.
-*/
-func trans(A: [Float], m: Int, n: Int) -> [Float] {
-  var transMatrix = [Float](count: A.count, repeatedValue: 0.0)
-    
-  vDSP_mtrans(A, 1, &transMatrix, 1, vDSP_Length(m), vDSP_Length(n))
-  
-  return transMatrix
-}
-
-/**Multiply two vectors and create a matrix.
+/**Calculate outer product of two vectors.
  - Parameter x: Vector x
  - Parameter y: Vector y
  - Returns: A matrix of x.count rows and y.count columns.
 */
-public func formMatrix(x: [Float], y: [Float]) -> [Float] {
+public func outer(x: [Float], y: [Float]) -> [Float] {
   var result = [Float](count: x.count * y.count, repeatedValue: Float())
   
-  let start = NSDate()
-  vDSP_mmul(x, 1, y, 1, &result, 1, vDSP_Length(result.count / y.count),
-    vDSP_Length(result.count / x.count), vDSP_Length(1))
-  print(NSDate().timeIntervalSinceDate(start))
+  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Int32(x.count), Int32(y.count), Int32(1),
+    1.0, x, Int32(1), y, Int32(y.count), 0.0, &result, Int32(y.count))
+  
   return result
 }
 
@@ -296,7 +282,7 @@ func sigmoid(x: [Float]) -> [Float] {
   - Parameter x: A vector x.
   - Returns: A vector z = tanh(x).
 */
-func tanh(x: [Float]) -> [Float] {
+public func tanh(x: [Float]) -> [Float] {
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vvtanhf(&results, x, [Int32(x.count)])
@@ -349,8 +335,20 @@ func softmax(z: [Float]) -> [Float] {
 /** Cost derivative function.
   - Parameter output: Output of network.
   - Parameter y: Target output.
-  - Returns A vector y' = (output - y).
+  - Returns a vector y' = (output - y).
 */
 func costDerivative(output: [Float], y: [Float]) -> [Float] {
   return sub(output, y: y)
+}
+
+/** Find max indices of each array in two-dimensionsl array.
+  - Parameter a: Two-dimensional array.
+  - Returns an array containing the index of the largest element in each array.
+*/
+func maxIndex(a: [[Float]]) -> [Int] {
+  var maxes = [Int]()
+  for b in a {
+    maxes.append(Int(cblas_isamax(Int32(b.count), b, 1)))
+  }
+  return maxes
 }
