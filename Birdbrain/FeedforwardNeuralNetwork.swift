@@ -42,7 +42,7 @@ public class FeedfowardNeuralNetwork {
     }
   }
   
-  //MARK: Getters
+  // MARK: Getters
     
   /**Return the weights of the network.
     - Returns: An array of the network's weight values.
@@ -63,6 +63,26 @@ public class FeedfowardNeuralNetwork {
   */
   public func getNetworkSize() -> Int {
     return numLayers
+  }
+  
+  // MARK: Setters
+  
+  /** Assign weights to the network. Number of weights must be fit shape of weight matrix.
+  */
+  public func setWeights(newWeights: [[Float]]) {
+    var canAssign = true
+    
+    // Quick check to make sure the weights are equal in size.
+    for (weight, size) in zip(weights, sizes) {
+      if (weight.count != size) {
+        canAssign = false
+      }
+    }
+    
+    // If it checks out assign the weights
+    if (canAssign) {
+      weights = newWeights
+    }
   }
   
   //MARK: Forward pass
@@ -173,8 +193,8 @@ public class FeedfowardNeuralNetwork {
   */
   private func backprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
     //Build namblaW and namblaB
-    var deltaW = [[Float]]()
-    var deltaB = [[Float]]()
+    var nablaW = [[Float]]()
+    var nablaB = [[Float]]()
     var delta = [Float]()
     var layer = 1
     var m: Int
@@ -184,11 +204,11 @@ public class FeedfowardNeuralNetwork {
     var activation = input
     
     for w in weights {
-      deltaW.append([Float](count: w.count, repeatedValue: 0.0))
+      nablaW.append([Float](count: w.count, repeatedValue: 0.0))
     }
     
     for b in biases {
-      deltaB.append([Float](count: b.count, repeatedValue: 0.0))
+      nablaB.append([Float](count: b.count, repeatedValue: 0.0))
     }
     
     //Compute a forward pass, hold z values and activations
@@ -228,29 +248,29 @@ public class FeedfowardNeuralNetwork {
         y: reluPrime(zVals[zVals.endIndex - 1]))
     }
     
-    deltaB[deltaB.endIndex - 1] = delta
-    deltaW[deltaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
+    nablaB[nablaB.endIndex - 1] = delta
+    nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
     
     for (var l = 2; l < numLayers; l++) {
       let z = zVals[zVals.endIndex - l]
-      let vec = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
+      let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)
       
       if (activationFunction == 1) {
-        delta = mul(vec, y: sigmoidPrime(z))
+        delta = mul(partialDelta, y: sigmoidPrime(z))
       }
       else if (activationFunction == 2) {
-        delta = mvMul(mat, m: sizes[l], n: sizes[l - 1], x: tanhPrime(z))
+        delta = mul(partialDelta, y: tanhPrime(z))
       }
       else {
-        delta = mvMul(mat, m: sizes[l], n:sizes[l - 1], x: reluPrime(z))
+        delta = mul(partialDelta, y: reluPrime(z))
       }
       
-      deltaB[deltaB.endIndex - l] = delta
-      deltaW[deltaW.endIndex - l] = outer(delta, y: activations[activations.endIndex - l - 1])
+      nablaB[nablaB.endIndex - l] = delta
+      nablaW[nablaW.endIndex - l] = outer(delta, y: activations[activations.endIndex - l - 1])
     }
     
-    return (deltaB, deltaW)
+    return (nablaB, nablaW)
   }
   
   /**Metal version of backpropagation helper function.
@@ -313,23 +333,26 @@ public class FeedfowardNeuralNetwork {
     nablaB[nablaB.endIndex - 1] = delta
     nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
         
-    for currentLayer in 2...numLayers {
-      let z = zVals[zVals.endIndex - currentLayer]
-            
+    nablaB[nablaB.endIndex - 1] = delta
+    nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
+    
+    for (var l = 2; l < numLayers; l++) {
+      let z = zVals[zVals.endIndex - l]
+      let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
+        n: sizes[sizes.endIndex - l + 1], x: delta)
+      
       if (activationFunction == 1) {
-        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
-          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlSigmoidPrime(z))
-      } else if (activationFunction == 2) {
-        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
-          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlTanhPrime(z))
-      } else {
-        delta = mvMul(outer(weights[weights.endIndex - currentLayer + 1], y: delta),
-          m: sizes[currentLayer - 2], n: sizes[currentLayer - 1], x: mtlReluPrime(z))
+        delta = mul(partialDelta, y: mtlSigmoidPrime(z))
       }
-            
-      nablaB[nablaB.endIndex - currentLayer] = delta
-      nablaW[nablaW.endIndex - currentLayer] = outer(delta,
-        y: activations[activations.endIndex - currentLayer])
+      else if (activationFunction == 2) {
+        delta = mul(partialDelta, y: mtlTanhPrime(z))
+      }
+      else {
+        delta = mul(partialDelta, y: mtlReluPrime(z))
+      }
+      
+      nablaB[nablaB.endIndex - l] = delta
+      nablaW[nablaW.endIndex - l] = outer(delta, y: activations[activations.endIndex - l - 1])
     }
         
     return (nablaB, nablaW)

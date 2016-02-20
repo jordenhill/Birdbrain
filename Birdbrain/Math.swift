@@ -121,8 +121,8 @@ public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
 }
 
 public func tmvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
-  precondition(Int(n) == x.count, "Number of columns in matrix A must equal length of vector x.")
-  var results: [Float] = (1...Int(m)).map{_ in 0.0}
+  precondition(Int(m) == x.count, "Number of columns in matrix A must equal length of vector x.")
+  var results: [Float] = (1...Int(n)).map{_ in 0.0}
   
   cblas_sgemv(CblasRowMajor, CblasTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
   
@@ -351,7 +351,7 @@ func costDerivative(output: [Float], y: [Float]) -> [Float] {
   return sub(output, y: y)
 }
 
-/** Find max indices of each array in two-dimensionsl array.
+/** Find max indices of each array in two-dimensional array.
   - Parameter a: Two-dimensional array.
   - Returns an array containing the index of the largest element in each array.
 */
