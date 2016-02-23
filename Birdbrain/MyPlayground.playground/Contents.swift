@@ -1,12 +1,11 @@
-//: Playground - noun: a place where people can play
+//A test playground containing various bits of quick "research"
 
-import UIKit
+//Size of Ints
+sizeof(Int)
+sizeof(Int32)
+sizeof(Int16)
 
-var str = "Hello, playground"
+//Get length of string
 
-var b = [[Int]](count: 100, repeatedValue: [Int](count: 1, repeatedValue: 0))
-b[99][0] = 1
-let d: [[Float]] = (0..<10).map { _ in (0..<100).map {_ in Float(arc4random_uniform(2)) } }
-
-b
-d
+var string = "Hello"
+string.characters.count

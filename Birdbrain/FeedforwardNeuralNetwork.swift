@@ -180,7 +180,7 @@ public class FeedfowardNeuralNetwork {
       (nablaB, nablaW) = backprop(input, target: target)
     }
     
-    for l in Range(start:0, end: numLayers - 1) {
+    for l in 0..<numLayers - 1 {
       weights[l] = sub(weights[l], y: mul(nablaW[l], c: learningRate))
       biases[l] = sub(biases[l], y: mul(nablaB[l], c: learningRate))
     }
@@ -251,7 +251,7 @@ public class FeedfowardNeuralNetwork {
     nablaB[nablaB.endIndex - 1] = delta
     nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
     
-    for (var l = 2; l < numLayers; l++) {
+    for l in 2 ..< numLayers {
       let z = zVals[zVals.endIndex - l]
       let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)
@@ -336,7 +336,7 @@ public class FeedfowardNeuralNetwork {
     nablaB[nablaB.endIndex - 1] = delta
     nablaW[nablaW.endIndex - 1] = outer(activations[activations.endIndex - 2], y: delta)
     
-    for (var l = 2; l < numLayers; l++) {
+    for l in 2 ..< numLayers {
       let z = zVals[zVals.endIndex - l]
       let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)

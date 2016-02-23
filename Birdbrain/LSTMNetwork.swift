@@ -66,7 +66,7 @@ public class LSTMNetwork {
     h[0] = mul(s[0], y: o[0])
     y[0] = softmax(s[0])
     
-    for t in Range(start: 1, end: T) {
+    for t in 1..<T {
       g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
         y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
       i[t] = mtlSigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
@@ -105,7 +105,7 @@ public class LSTMNetwork {
     h[0] = mul(s[0], y: o[0])
     y[0] = softmax(s[0])
     
-    for t in Range(start: 1, end: T) {
+    for t in 1..<T {
       g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
         y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
       i[t] = sigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
