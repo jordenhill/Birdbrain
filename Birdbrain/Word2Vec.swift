@@ -9,14 +9,14 @@
 import Foundation
 
 struct vocabWord {
-  var cn: Int //The count of occurences of the word
+  var count: Int //The count of occurences of the word
   var point: [Int]
   var word: String //The word
   var code: [Int8]
   var codeLength: Int8
   
   init() {
-    cn = 0
+    count = 0
     point = [0]
     word = ""
     code = [0]
@@ -81,6 +81,8 @@ func trainModel() {
   
 }
 
+/**Create a unigram model using the words collected.
+*/
 func initalizeUnigramTable() {
   var i = 0
   var trainWordsPow: Double = 0
@@ -89,16 +91,16 @@ func initalizeUnigramTable() {
   table = [Int](count: tableSize, repeatedValue: 0)
   
   for a in 0..<vocabSize {
-    trainWordsPow += pow(Double(vocab[a].cn), power)
+    trainWordsPow += pow(Double(vocab[a].count), power)
   }
  
-  d1 = pow(Double(vocab[i].cn), power) / trainWordsPow
+  d1 = pow(Double(vocab[i].count), power) / trainWordsPow
  
   for a in 0..<tableSize {
     table[a] = i
     if (Double(a / tableSize) > d1) {
       i += 1
-      d1 += pow(Double(vocab[i].cn), power) / trainWordsPow
+      d1 += pow(Double(vocab[i].count), power) / trainWordsPow
     }
     if (i >= vocabSize) {
       i = vocabSize
@@ -120,8 +122,11 @@ func getWordHash(word: String) -> Int {
   return hash
 }
 
-//** Adds a word to the vocabulary
-   
+
+/** Adds a word to the vocabulary
+  - Parameter word: The word to add to vocabulary.
+  - Returns: The vocabulary size - 1.
+*/
 func addWordToVocab(word: String) -> Int {
   var hash: Int = word.characters.count + 1, length: Int = word.characters.count + 1;
   if (length > maxString) {
@@ -129,16 +134,8 @@ func addWordToVocab(word: String) -> Int {
   }
   
   vocab[vocabSize].word = word
-  vocab[vocabSize].cn = 0;
+  vocab[vocabSize].count = 0;
   vocabSize += 1;
-  
-  //TODO: Determine if necessary
-  
-  /*// Reallocate memory if needed
-  if (vocab_size + 2 >= vocab_max_size) {
-    vocab_max_size += 1000;
-    vocab = (struct vocab_word *)realloc(vocab, vocab_max_size * sizeof(struct vocab_word));
-  }*/
   
   hash = getWordHash(word);
   
@@ -176,7 +173,7 @@ func sortVocab() {
   
   //Sort array, keeping </s> as first element
   let firstVocabElement = vocab.removeAtIndex(0)
-  vocab.sortInPlace() {word1, word2 in word1.cn < word2.cn}
+  vocab.sortInPlace() {word1, word2 in word1.count < word2.count}
   vocab.insert(firstVocabElement, atIndex: 0)
   
   for a in 0..<vocabHashSize {
@@ -187,7 +184,7 @@ func sortVocab() {
   trainWords = 0
   
   for b in 0..<size {
-    if ((vocab[b].cn < minCount) && (b != 0)) {
+    if ((vocab[b].count < minCount) && (b != 0)) {
       vocabSize -= 1
     } else {
       // recompute hash
@@ -196,7 +193,7 @@ func sortVocab() {
         hash = (hash + 1) % vocabHashSize
       }
       vocabHash[hash] = b;
-      trainWords += vocab[b].cn;
+      trainWords += vocab[b].count;
     }
   }
   
@@ -220,6 +217,38 @@ func shrinkVocab(inout vocab: [vocabWord]) {
   }
 }
 
+/** Reduce the vocabulary by removing infrequent tokens.
+*/
+func reduceVocab() {
+  var b = 0
+  var hash: Int
+  
+  for a in 0 ..< vocabSize {
+    if (vocab[a].count > minReduce) {
+      vocab[b].count = vocab[a].count
+      vocab[b].word = vocab[a].word
+      b += 1
+    }
+  }
+  
+  vocabSize = b;
+  
+  for c in 0 ..< vocabHashSize {
+    vocabHash[c] = -1;
+  }
+  
+  for d in 0 ..< vocabSize {
+    // Recompute hash
+    hash = getWordHash(vocab[d].word);
+    while (vocabHash[hash] != -1) {
+      hash = (hash + 1) % vocabHashSize;
+    }
+    vocabHash[hash] = d;
+  }
+  fflush(stdout);
+  minReduce += 1;
+}
+
 /** Create a binary huffman tree
 */
 func createBinaryTree() {
@@ -232,7 +261,7 @@ func createBinaryTree() {
   var min2i: Int
   
   for a in 0 ..< vocabSize {
-    count[a] = vocab[a].cn
+    count[a] = vocab[a].count
   }
   
   for b in 0 ..< vocabSize * 2 {
