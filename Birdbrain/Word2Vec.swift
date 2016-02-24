@@ -40,10 +40,11 @@ var vocabSize = 0
 var layer1Size = 100
 var trainWords = 0, wordCountActual = 0, iter = 5, fileSize = 0, classes = 0
 var alpha: Float = 0.025, startingAlpha = Float(), sample: Float = 0.001
-var syn0 = Float(), syn1 = Float(), syn1Neg = Float()
+var syn0 = [Float](), syn1 = [Float](), syn1Neg = [Float]()
 var expTable = [Float](count: expTableSize, repeatedValue: 0.0)
 
-var hs = 0, negative = 5
+var hs = false
+var negative = 5
 var tableSize = 100000000
 var table = [Int]();
 
@@ -120,6 +121,30 @@ func getWordHash(word: String) -> Int {
   }
   
   return hash
+}
+
+/** Initialize the network.
+*/
+func initializeNet() {
+  var nextRandom = 1
+  syn0 = [Float](count: vocabSize * layer1Size, repeatedValue: 0.0)
+  
+  if (hs) {
+    syn1 = [Float](count: vocabSize * layer1Size, repeatedValue: 0.0)
+  }
+  
+  if (negative > 0) {
+    syn1Neg = [Float](count: vocabSize * layer1Size, repeatedValue: 0.0)
+  }
+  
+  for a in 0 ..< vocabSize {
+    for b in 0 ..< layer1Size {
+      nextRandom = nextRandom * 25214903917 + 11
+      syn0[a * layer1Size + b] = ((Float(nextRandom & 0xFFFF) / Float(65536)) - 0.5) / Float(layer1Size);
+    }
+  }
+  
+  createBinaryTree()
 }
 
 
