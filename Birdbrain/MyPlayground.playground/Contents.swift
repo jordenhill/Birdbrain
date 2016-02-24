@@ -41,3 +41,9 @@ var firstElement = array[0]
 var sortedArray = array.dropFirst().sort() { a,b in return a.val < b.val}
 sortedArray.insert(firstElement, atIndex: 0)
 array = sortedArray
+
+//
+
+var activateFunction = "sigmoid"
+
+print((activateFunction != "sigmoid") && (activateFunction != "tangent") && (activateFunction != "relu"))

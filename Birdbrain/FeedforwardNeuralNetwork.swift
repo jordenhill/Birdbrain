@@ -14,7 +14,7 @@ public class FeedfowardNeuralNetwork {
   var biases = [[Float]]()
   var weights = [[Float]]()
   var useMetal: Bool
-  var activationFunction: Int
+  var activationFunction: String
     
   /**Constructor for Feedforward Neural Network.
     - Parameter sizes: The number of layers and size of each layer in the network.
@@ -22,12 +22,24 @@ public class FeedfowardNeuralNetwork {
     - Parameter activationFunction: Activation function to use 
       (1 - Sigmoid, 2, Hyperbolic Tangent, 3 - ReLu).
    */
-  public init (sizes: [Int], useMetal: Bool, activationFunction: Int) {
+  public init? (sizes: [Int], useMetal: Bool, activateFunction: String) {
+    // Check that size and activationFunction are correct
+    if (sizes.count < 2) {
+      print("Size of network must be at least 2.")
+      return nil
+    }
+        
+    if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
+      (activateFunction != "relu")) {
+      print("Must use sigmoid, tangent, or relu as activateFunction parameter")
+      return nil
+    }
+    
     //Set initialization values.
     numLayers = sizes.count
     self.sizes = sizes
     self.useMetal = useMetal
-    self.activationFunction = activationFunction
+    self.activationFunction = activateFunction
     
     //Initialize the biases
     for y in sizes[1..<sizes.endIndex] {
@@ -114,11 +126,11 @@ public class FeedfowardNeuralNetwork {
       let n = sizes[layer - 1]
       let m = sizes[layer]
       
-      if (activationFunction == 1) { //Sigmoid
+      if (activationFunction == "sigmoid") { //Sigmoid
         activations.append(mtlSigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
-      } else if (activationFunction == 2) { //Hyperbolic tangent
+      } else if (activationFunction == "tangent") { //Hyperbolic tangent
         activations.append(mtlTanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
-      } else if (activationFunction == 3) { //Rectified Linear
+      } else if (activationFunction == "relu") { //Rectified Linear
         activations.append(mtlRelu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
       } else {
         print("No appropriate activation function entered.")
@@ -145,11 +157,11 @@ public class FeedfowardNeuralNetwork {
       let n = sizes[layer - 1]
       let m = sizes[layer]
       
-      if (activationFunction == 1) { //Sigmoid
+      if (activationFunction == "sigmoid") { //Sigmoid
         activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
-      } else if (activationFunction == 2) { //Hyperbolic tangent
+      } else if (activationFunction == "tangent") { //Hyperbolic tangent
         activations.append(tanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
-      } else if (activationFunction == 3) { //Rectified Linear
+      } else if (activationFunction == "relu") { //Rectified Linear
         activations.append(relu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
       } else {
         print("No appropriate activation function entered.")
@@ -219,13 +231,11 @@ public class FeedfowardNeuralNetwork {
       
       zVals.append(z)
       
-      if (activationFunction == 1) {
+      if (activationFunction == "sigmoid") {
         activation = sigmoid(z)
-      }
-      else if (activationFunction == 2) {
+      } else if (activationFunction == "tangent") {
         activation = tanh(z)
-      }
-      else {
+      } else {
         activation = relu(z)
       }
       
@@ -235,15 +245,13 @@ public class FeedfowardNeuralNetwork {
     }
     
     //Create delta for last layer based on output, do a backward pass
-    if (activationFunction == 1) {
+    if (activationFunction == "sigmoid") {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: sigmoidPrime(zVals[zVals.endIndex - 1]))
-    }
-    else if (activationFunction == 2) {
+    } else if (activationFunction == "tangent") {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: tanhPrime(zVals[zVals.endIndex - 1]))
-    }
-    else {
+    } else {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: reluPrime(zVals[zVals.endIndex - 1]))
     }
@@ -256,13 +264,11 @@ public class FeedfowardNeuralNetwork {
       let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)
       
-      if (activationFunction == 1) {
+      if (activationFunction == "sigmoid") {
         delta = mul(partialDelta, y: sigmoidPrime(z))
-      }
-      else if (activationFunction == 2) {
+      } else if (activationFunction == "tangent") {
         delta = mul(partialDelta, y: tanhPrime(z))
-      }
-      else {
+      } else {
         delta = mul(partialDelta, y: reluPrime(z))
       }
       
@@ -305,9 +311,9 @@ public class FeedfowardNeuralNetwork {
 
       zVals.append(z)
                 
-      if (activationFunction == 1) {
+      if (activationFunction == "sigmoid") {
         layerInput = mtlSigmoid(z)
-      } else if (activationFunction == 2) {
+      } else if (activationFunction == "tangent") {
         layerInput = mtlTanh(z)
       } else {
         layerInput = mtlRelu(z)
@@ -319,10 +325,10 @@ public class FeedfowardNeuralNetwork {
     }
         
     //Create delta for last layer based on output, do a backward pass
-    if (activationFunction == 1) {
+    if (activationFunction == "sigmoid") {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: mtlSigmoidPrime(zVals[zVals.endIndex - 1]))
-    } else if (activationFunction == 2) {
+    } else if (activationFunction == "tangent") {
       delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
         y: mtlTanhPrime(zVals[zVals.endIndex - 1]))
     } else {
@@ -341,10 +347,10 @@ public class FeedfowardNeuralNetwork {
       let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)
       
-      if (activationFunction == 1) {
+      if (activationFunction == "sigmoid") {
         delta = mul(partialDelta, y: mtlSigmoidPrime(z))
       }
-      else if (activationFunction == 2) {
+      else if (activationFunction == "tangent") {
         delta = mul(partialDelta, y: mtlTanhPrime(z))
       }
       else {

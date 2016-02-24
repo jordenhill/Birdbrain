@@ -9,10 +9,11 @@
 /* Begin PBXBuildFile section */
 		BC0090371BBB22700086F758 /* Birdbrain.h in Headers */ = {isa = PBXBuildFile; fileRef = BC0090361BBB22700086F758 /* Birdbrain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BC00903E1BBB22700086F758 /* Birdbrain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0090331BBB22700086F758 /* Birdbrain.framework */; };
-		BC0090431BBB22710086F758 /* BirdbrainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090421BBB22710086F758 /* BirdbrainTests.swift */; };
+		BC0090431BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090421BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift */; };
 		BC00904E1BBB23390086F758 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC00904D1BBB23390086F758 /* Accelerate.framework */; };
 		BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */; };
 		BC0090521BBB24170086F758 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090511BBB24170086F758 /* Math.swift */; };
+		BC0C740A1C7D8E6900DC8124 /* Word2VecTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0C74091C7D8E6900DC8124 /* Word2VecTest.swift */; };
 		BC186AFE1C14B9A100F717AE /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC186AFD1C14B9A100F717AE /* MetalFunctions.metal */; };
 		BC32C8EF1BC7979B00D92D94 /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */; };
 		BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
@@ -39,11 +40,12 @@
 		BC0090361BBB22700086F758 /* Birdbrain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Birdbrain.h; sourceTree = "<group>"; };
 		BC0090381BBB22700086F758 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BC00903D1BBB22700086F758 /* BirdbrainTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BirdbrainTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		BC0090421BBB22710086F758 /* BirdbrainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdbrainTests.swift; sourceTree = "<group>"; };
+		BC0090421BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedforwardNeuralNetworldTests.swift; sourceTree = "<group>"; };
 		BC0090441BBB22710086F758 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BC00904D1BBB23390086F758 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedforwardNeuralNetwork.swift; sourceTree = "<group>"; };
 		BC0090511BBB24170086F758 /* Math.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
+		BC0C74091C7D8E6900DC8124 /* Word2VecTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Word2VecTest.swift; sourceTree = "<group>"; };
 		BC186AFD1C14B9A100F717AE /* MetalFunctions.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = MetalFunctions.metal; sourceTree = "<group>"; };
 		BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalDevice.swift; sourceTree = "<group>"; };
 		BC32C8F21BC79EE600D92D94 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -112,9 +114,10 @@
 		BC0090411BBB22700086F758 /* BirdbrainTests */ = {
 			isa = PBXGroup;
 			children = (
-				BC0090421BBB22710086F758 /* BirdbrainTests.swift */,
+				BC0090421BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift */,
 				BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */,
 				BC0090441BBB22710086F758 /* Info.plist */,
+				BC0C74091C7D8E6900DC8124 /* Word2VecTest.swift */,
 			);
 			path = BirdbrainTests;
 			sourceTree = "<group>";
@@ -281,7 +284,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC0090431BBB22710086F758 /* BirdbrainTests.swift in Sources */,
+				BC0C740A1C7D8E6900DC8124 /* Word2VecTest.swift in Sources */,
+				BC0090431BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift in Sources */,
 				BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -8,14 +8,14 @@
 
 import Foundation
 
-struct vocabWord {
+public struct vocabWord {
   var count: Int //The count of occurences of the word
   var point: [Int]
   var word: String //The word
   var code: [Int8]
   var codeLength: Int8
   
-  init() {
+  public init() {
     count = 0
     point = [0]
     word = ""

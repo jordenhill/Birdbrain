@@ -21,7 +21,8 @@ class BirdbrainMathTest: XCTestCase {
                                 3.0,  4.0]
     
     func testVectorSum() {
-        XCTAssertTrue(sum(testVector1) == 3.0, "Wrong vector sum")
+        XCTAssertEqual(sum(testVector1),  3.0, "Wrong vector sum")
+      
     }
     
     func testVectorAddition() {
