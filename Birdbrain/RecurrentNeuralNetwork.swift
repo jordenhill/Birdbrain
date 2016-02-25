@@ -23,7 +23,6 @@ public class RecurrentNeuralNetwork {
     - Parameter hiddenDim: Dimension hidden vectors in RNN (number of input vectors).
   */
   public init(inputDim: Int, hiddenDim: Int, useMetal: Bool, activationFunction: String) {
-    
     self.inputDim = inputDim
     self.hiddenDim = hiddenDim
     self.activationFunction = activationFunction
