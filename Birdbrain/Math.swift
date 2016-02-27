@@ -27,7 +27,6 @@ public func sum(x: [Float]) -> Float {
 */
 public func add(x: [Float], y: [Float]) -> [Float] {
   var result = [Float](y)
-  
   cblas_saxpy(Int32(x.count), 1.0, x, 1, &result, 1)
   
   return result

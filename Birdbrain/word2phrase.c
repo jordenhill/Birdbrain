@@ -22,7 +22,7 @@
 
 #define MAX_STRING 60
 
-const int vocabHashSize = 500000000; // Maximum 500M entries in the vocabulary
+const int vocab_hash_size = 500000000; // Maximum 500M entries in the vocabulary
 
 typedef float real;                    // Precision of float numbers
 
@@ -31,17 +31,17 @@ struct vocab_word {
   char *word;
 };
 
-char trainFile[MAX_STRING], outputFile[MAX_STRING];
-struct vocab_word *vocab_wrd;
-int debugMode = 2, minCount = 5, *vocabHash, minReduce = 1;
-long long vocabMaxSize = 10000, vocabSize = 0;
-long long trainWords = 0;
+char train_file[MAX_STRING], output_file[MAX_STRING];
+struct vocab_word *vocab;
+int debug_mode = 2, min_count = 5, *vocab_hash, min_reduce = 1;
+long long vocab_max_size = 10000, vocab_size = 0;
+long long train_words = 0;
 real threshold = 100;
 
 unsigned long long next_random = 1;
 
 // Reads a single word from a file, assuming space + tab + EOL to be word boundaries
-void _ReadWord(char *word, FILE *fin) {
+void ReadWord(char *word, FILE *fin) {
   int a = 0, ch;
   while (!feof(fin)) {
     ch = fgetc(fin);
@@ -64,182 +64,182 @@ void _ReadWord(char *word, FILE *fin) {
 }
 
 // Returns hash value of a word
-int _GetWordHash(char *word) {
+int GetWordHash(char *word) {
   unsigned long long a, hash = 1;
   for (a = 0; a < strlen(word); a++) hash = hash * 257 + word[a];
-  hash = hash % vocabHashSize;
+  hash = hash % vocab_hash_size;
   return hash;
 }
 
 // Returns position of a word in the vocabulary; if the word is not found, returns -1
-int _SearchVocab(char *word) {
-  unsigned int hash = _GetWordHash(word);
+int SearchVocab(char *word) {
+  unsigned int hash = GetWordHash(word);
   while (1) {
-    if (vocabHash[hash] == -1) return -1;
-    if (!strcmp(word, vocab_wrd[vocabHash[hash]].word)) return vocabHash[hash];
-    hash = (hash + 1) % vocabHashSize;
+    if (vocab_hash[hash] == -1) return -1;
+    if (!strcmp(word, vocab[vocab_hash[hash]].word)) return vocab_hash[hash];
+    hash = (hash + 1) % vocab_hash_size;
   }
   return -1;
 }
 
 // Reads a word and returns its index in the vocabulary
-int _ReadWordIndex(FILE *fin) {
+int ReadWordIndex(FILE *fin) {
   char word[MAX_STRING];
-  _ReadWord(word, fin);
+  ReadWord(word, fin);
   if (feof(fin)) return -1;
-  return _SearchVocab(word);
+  return SearchVocab(word);
 }
 
 // Adds a word to the vocabulary
-int _AddWordToVocab(char *word) {
+int AddWordToVocab(char *word) {
   unsigned int hash, length = strlen(word) + 1;
   if (length > MAX_STRING) length = MAX_STRING;
-  vocab_wrd[vocabSize].word = (char *)calloc(length, sizeof(char));
-  strcpy(vocab_wrd[vocabSize].word, word);
-  vocab_wrd[vocabSize].cn = 0;
-  vocabSize++;
+  vocab[vocab_size].word = (char *)calloc(length, sizeof(char));
+  strcpy(vocab[vocab_size].word, word);
+  vocab[vocab_size].cn = 0;
+  vocab_size++;
   // Reallocate memory if needed
-  if (vocabSize + 2 >= vocabMaxSize) {
-    vocabMaxSize += 10000;
-    vocab_wrd=(struct vocab_word *)realloc(vocab_wrd, vocabMaxSize * sizeof(struct vocab_word));
+  if (vocab_size + 2 >= vocab_max_size) {
+    vocab_max_size += 10000;
+    vocab=(struct vocab_word *)realloc(vocab, vocab_max_size * sizeof(struct vocab_word));
   }
-  hash = _GetWordHash(word);
-  while (vocabHash[hash] != -1) hash = (hash + 1) % vocabHashSize;
-  vocabHash[hash]=vocabSize - 1;
-  return vocabSize - 1;
+  hash = GetWordHash(word);
+  while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
+  vocab_hash[hash]=vocab_size - 1;
+  return vocab_size - 1;
 }
 
 // Used later for sorting by word counts
-int _VocabCompare(const void *a, const void *b) {
-    return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+int VocabCompare(const void *a, const void *b) {
+  return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
 }
 
 // Sorts the vocabulary by frequency using word counts
-void _SortVocab() {
+void SortVocab() {
   int a;
   unsigned int hash;
   // Sort the vocabulary and keep </s> at the first position
-  qsort(&vocab_wrd[1], vocabSize - 1, sizeof(struct vocab_word), _VocabCompare);
-  for (a = 0; a < vocabHashSize; a++) vocabHash[a] = -1;
-  for (a = 0; a < vocabSize; a++) {
-    // Words occuring less than minCount times will be discarded from the vocab_wrd
-    if (vocab_wrd[a].cn < minCount) {
-      vocabSize--;
-      free(vocab_wrd[vocabSize].word);
+  qsort(&vocab[1], vocab_size - 1, sizeof(struct vocab_word), VocabCompare);
+  for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
+  for (a = 0; a < vocab_size; a++) {
+    // Words occuring less than min_count times will be discarded from the vocab
+    if (vocab[a].cn < min_count) {
+      vocab_size--;
+      free(vocab[vocab_size].word);
     } else {
       // Hash will be re-computed, as after the sorting it is not actual
-      hash = _GetWordHash(vocab_wrd[a].word);
-      while (vocabHash[hash] != -1) hash = (hash + 1) % vocabHashSize;
-      vocabHash[hash] = a;
+      hash = GetWordHash(vocab[a].word);
+      while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
+      vocab_hash[hash] = a;
     }
   }
-  vocab_wrd = (struct vocab_word *)realloc(vocab_wrd, vocabSize * sizeof(struct vocab_word));
+  vocab = (struct vocab_word *)realloc(vocab, vocab_size * sizeof(struct vocab_word));
 }
 
 // Reduces the vocabulary by removing infrequent tokens
-void _ReduceVocab() {
+void ReduceVocab() {
   int a, b = 0;
   unsigned int hash;
-  for (a = 0; a < vocabSize; a++) if (vocab_wrd[a].cn > minReduce) {
-    vocab_wrd[b].cn = vocab_wrd[a].cn;
-    vocab_wrd[b].word = vocab_wrd[a].word;
+  for (a = 0; a < vocab_size; a++) if (vocab[a].cn > min_reduce) {
+    vocab[b].cn = vocab[a].cn;
+    vocab[b].word = vocab[a].word;
     b++;
-  } else free(vocab_wrd[a].word);
-  vocabSize = b;
-  for (a = 0; a < vocabHashSize; a++) vocabHash[a] = -1;
-  for (a = 0; a < vocabSize; a++) {
+  } else free(vocab[a].word);
+  vocab_size = b;
+  for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
+  for (a = 0; a < vocab_size; a++) {
     // Hash will be re-computed, as it is not actual
-    hash = _GetWordHash(vocab_wrd[a].word);
-    while (vocabHash[hash] != -1) hash = (hash + 1) % vocabHashSize;
-    vocabHash[hash] = a;
+    hash = GetWordHash(vocab[a].word);
+    while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
+    vocab_hash[hash] = a;
   }
   fflush(stdout);
-  minReduce++;
+  min_reduce++;
 }
 
-void _LearnVocabFromTrainFile() {
+void LearnVocabFromTrainFile() {
   char word[MAX_STRING], last_word[MAX_STRING], bigram_word[MAX_STRING * 2];
   FILE *fin;
   long long a, i, start = 1;
-  for (a = 0; a < vocabHashSize; a++) vocabHash[a] = -1;
-  fin = fopen(trainFile, "rb");
+  for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
+  fin = fopen(train_file, "rb");
   if (fin == NULL) {
     printf("ERROR: training data file not found!\n");
     exit(1);
   }
-  vocabSize = 0;
-  _AddWordToVocab((char *)"</s>");
+  vocab_size = 0;
+  AddWordToVocab((char *)"</s>");
   while (1) {
-    _ReadWord(word, fin);
+    ReadWord(word, fin);
     if (feof(fin)) break;
     if (!strcmp(word, "</s>")) {
       start = 1;
       continue;
     } else start = 0;
-    trainWords++;
-    if ((debugMode > 1) && (trainWords % 100000 == 0)) {
-      printf("Words processed: %lldK     vocab size: %lldK  %c", trainWords / 1000, vocabSize / 1000, 13);
+    train_words++;
+    if ((debug_mode > 1) && (train_words % 100000 == 0)) {
+      printf("Words processed: %lldK     Vocab size: %lldK  %c", train_words / 1000, vocab_size / 1000, 13);
       fflush(stdout);
     }
-    i = _SearchVocab(word);
+    i = SearchVocab(word);
     if (i == -1) {
-      a = _AddWordToVocab(word);
-      vocab_wrd[a].cn = 1;
-    } else vocab_wrd[i].cn++;
+      a = AddWordToVocab(word);
+      vocab[a].cn = 1;
+    } else vocab[i].cn++;
     if (start) continue;
     sprintf(bigram_word, "%s_%s", last_word, word);
     bigram_word[MAX_STRING - 1] = 0;
     strcpy(last_word, word);
-    i = _SearchVocab(bigram_word);
+    i = SearchVocab(bigram_word);
     if (i == -1) {
-      a = _AddWordToVocab(bigram_word);
-      vocab_wrd[a].cn = 1;
-    } else vocab_wrd[i].cn++;
-    if (vocabSize > vocabHashSize * 0.7) _ReduceVocab();
+      a = AddWordToVocab(bigram_word);
+      vocab[a].cn = 1;
+    } else vocab[i].cn++;
+    if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
   }
-  _SortVocab();
-  if (debugMode > 0) {
-    printf("\nVocab size (unigrams + bigrams): %lld\n", vocabSize);
-    printf("Words in train file: %lld\n", trainWords);
+  SortVocab();
+  if (debug_mode > 0) {
+    printf("\nVocab size (unigrams + bigrams): %lld\n", vocab_size);
+    printf("Words in train file: %lld\n", train_words);
   }
   fclose(fin);
 }
 
-void _TrainModel() {
+void TrainModel() {
   long long pa = 0, pb = 0, pab = 0, oov, i, li = -1, cn = 0;
   char word[MAX_STRING], last_word[MAX_STRING], bigram_word[MAX_STRING * 2];
   real score;
   FILE *fo, *fin;
-  printf("Starting training using file %s\n", trainFile);
-  _LearnVocabFromTrainFile();
-  fin = fopen(trainFile, "rb");
-  fo = fopen(outputFile, "wb");
+  printf("Starting training using file %s\n", train_file);
+  LearnVocabFromTrainFile();
+  fin = fopen(train_file, "rb");
+  fo = fopen(output_file, "wb");
   word[0] = 0;
   while (1) {
     strcpy(last_word, word);
-    _ReadWord(word, fin);
+    ReadWord(word, fin);
     if (feof(fin)) break;
     if (!strcmp(word, "</s>")) {
       fprintf(fo, "\n");
       continue;
     }
     cn++;
-    if ((debugMode > 1) && (cn % 100000 == 0)) {
+    if ((debug_mode > 1) && (cn % 100000 == 0)) {
       printf("Words written: %lldK%c", cn / 1000, 13);
       fflush(stdout);
     }
     oov = 0;
-    i = _SearchVocab(word);
-    if (i == -1) oov = 1; else pb = vocab_wrd[i].cn;
+    i = SearchVocab(word);
+    if (i == -1) oov = 1; else pb = vocab[i].cn;
     if (li == -1) oov = 1;
     li = i;
     sprintf(bigram_word, "%s_%s", last_word, word);
     bigram_word[MAX_STRING - 1] = 0;
-    i = _SearchVocab(bigram_word);
-    if (i == -1) oov = 1; else pab = vocab_wrd[i].cn;
-    if (pa < minCount) oov = 1;
-    if (pb < minCount) oov = 1;
-    if (oov) score = 0; else score = (pab - minCount) / (real)pa / (real)pb * (real)trainWords;
+    i = SearchVocab(bigram_word);
+    if (i == -1) oov = 1; else pab = vocab[i].cn;
+    if (pa < min_count) oov = 1;
+    if (pb < min_count) oov = 1;
+    if (oov) score = 0; else score = (pab - min_count) / (real)pa / (real)pb * (real)train_words;
     if (score > threshold) {
       fprintf(fo, "_%s", word);
       pb = 0;
@@ -250,7 +250,7 @@ void _TrainModel() {
   fclose(fin);
 }
 
-int _ArgPos(char *str, int argc, char **argv) {
+int ArgPos(char *str, int argc, char **argv) {
   int a;
   for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
     if (a == argc - 1) {
@@ -262,7 +262,7 @@ int _ArgPos(char *str, int argc, char **argv) {
   return -1;
 }
 
-int _main(int argc, char **argv) {
+int main(int argc, char **argv) {
   int i;
   if (argc == 1) {
     printf("WORD2PHRASE tool v0.1a\n\n");
@@ -282,13 +282,13 @@ int _main(int argc, char **argv) {
     printf("./word2phrase -train text.txt -output phrases.txt -threshold 100 -debug 2\n\n");
     return 0;
   }
-  if ((i = _ArgPos((char *)"-train", argc, argv)) > 0) strcpy(trainFile, argv[i + 1]);
-  if ((i = _ArgPos((char *)"-debug", argc, argv)) > 0) debugMode = atoi(argv[i + 1]);
-  if ((i = _ArgPos((char *)"-output", argc, argv)) > 0) strcpy(outputFile, argv[i + 1]);
-  if ((i = _ArgPos((char *)"-min-count", argc, argv)) > 0) minCount = atoi(argv[i + 1]);
-  if ((i = _ArgPos((char *)"-threshold", argc, argv)) > 0) threshold = atof(argv[i + 1]);
-  vocab_wrd = (struct vocab_word *)calloc(vocabMaxSize, sizeof(struct vocab_word));
-  vocabHash = (int *)calloc(vocabHashSize, sizeof(int));
-  _TrainModel();
+  if ((i = ArgPos((char *)"-train", argc, argv)) > 0) strcpy(train_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-debug", argc, argv)) > 0) debug_mode = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
+  if ((i = ArgPos((char *)"-min-count", argc, argv)) > 0) min_count = atoi(argv[i + 1]);
+  if ((i = ArgPos((char *)"-threshold", argc, argv)) > 0) threshold = atof(argv[i + 1]);
+  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
+  vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
+  TrainModel();
   return 0;
 }
