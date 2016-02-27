@@ -15,6 +15,7 @@
 		BC186AFE1C14B9A100F717AE /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC186AFD1C14B9A100F717AE /* MetalFunctions.metal */; };
 		BC32C8EF1BC7979B00D92D94 /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */; };
 		BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
+		BC9744BF1C80CA030034473F /* word2phrase.c in Sources */ = {isa = PBXBuildFile; fileRef = BC9744BE1C80CA030034473F /* word2phrase.c */; };
 		BCD993761C7EE29B005A93ED /* Birdbrain-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = BCD993751C7EE29B005A93ED /* Birdbrain-Bridging-Header.h */; };
 		BCD993851C7EE76E005A93ED /* word2vec.c in Sources */ = {isa = PBXBuildFile; fileRef = BCD993801C7EE76E005A93ED /* word2vec.c */; };
 		BCD993871C7EE8F9005A93ED /* Word2Vec.h in Headers */ = {isa = PBXBuildFile; fileRef = BCD993861C7EE8F9005A93ED /* Word2Vec.h */; };
@@ -47,6 +48,7 @@
 		BC186AFD1C14B9A100F717AE /* MetalFunctions.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = MetalFunctions.metal; sourceTree = "<group>"; };
 		BC32C8EE1BC7979B00D92D94 /* MetalDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalDevice.swift; sourceTree = "<group>"; };
 		BC32C8F21BC79EE600D92D94 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		BC9744BE1C80CA030034473F /* word2phrase.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = word2phrase.c; sourceTree = "<group>"; };
 		BCD993751C7EE29B005A93ED /* Birdbrain-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Birdbrain-Bridging-Header.h"; sourceTree = "<group>"; };
 		BCD993801C7EE76E005A93ED /* word2vec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = word2vec.c; path = "../../../../Downloads/word2vec-master/word2vec.c"; sourceTree = "<group>"; };
 		BCD993861C7EE8F9005A93ED /* Word2Vec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Word2Vec.h; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 		BCD993791C7EE454005A93ED /* Word2Vec */ = {
 			isa = PBXGroup;
 			children = (
+				BC9744BE1C80CA030034473F /* word2phrase.c */,
 				BCD993801C7EE76E005A93ED /* word2vec.c */,
 				BCD993861C7EE8F9005A93ED /* Word2Vec.h */,
 			);
@@ -279,6 +282,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BCF7F4E01C10340800AAFBE0 /* LSTMNetwork.swift in Sources */,
+				BC9744BF1C80CA030034473F /* word2phrase.c in Sources */,
 				BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */,
 				BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */,
 				BCD993851C7EE76E005A93ED /* word2vec.c in Sources */,

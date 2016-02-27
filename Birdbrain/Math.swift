@@ -26,11 +26,6 @@ public func sum(x: [Float]) -> Float {
   - Returns: A vector containing the sum of the two vectors.
 */
 public func add(x: [Float], y: [Float]) -> [Float] {
-  guard (x.count != y.count) else {
-    print("Vectors must have the same length. Returning first vector.")
-    return x
-  }
-  
   var result = [Float](y)
   
   cblas_saxpy(Int32(x.count), 1.0, x, 1, &result, 1)
@@ -59,11 +54,6 @@ public func add(x: [Float], c: Float) -> [Float] {
   - Returns: A vector containing the difference of x and y.
 */
 public func sub(x: [Float], var y: [Float]) -> [Float] {
-  guard (x.count != y.count) else {
-    print("Vectors must have the same length. Returning first vector.")
-    return x
-  }
-
   catlas_saxpby(Int32(y.count), 1.0, x, Int32(1), -1.0, &y, Int32(1))
   
   return y
@@ -90,10 +80,6 @@ public func sub(x: [Float], c: Float) -> [Float] {
   - Returns: The product of vector x and vector y.
 */
 public func mul(x: [Float], y: [Float]) -> [Float] {
-  guard (x.count != y.count) else {
-    print("Vectors must have the same length. Returning first vector.")
-    return x
-  }
   
   var result = [Float](count: x.count, repeatedValue: 0.0)
   
@@ -123,22 +109,14 @@ public func mul(var x: [Float], c: Float) -> [Float] {
  - Returns: A vector product of matrix A and vector x.
 */
 public func mvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
-  guard (Int(n) != x.count) else {
-    print("The number of columns in matrix A must equal length of vector x. Returning vector x.")
-    return x
-  }
   var results: [Float] = (1...Int(m)).map{_ in 0.0}
 
   cblas_sgemv(CblasRowMajor, CblasNoTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
-    
+
   return results
 }
 
 public func tmvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
-  guard (Int(m) != x.count) else {
-    print("The number of rows in matrix A must equal length of vector x. Returning vector x.")
-    return x
-  }
   var results: [Float] = (1...Int(n)).map{_ in 0.0}
   
   cblas_sgemv(CblasRowMajor, CblasTrans, Int32(m), Int32(n), 1, A, Int32(n), x, 1, 0, &results, 1)
@@ -155,11 +133,6 @@ public func tmvMul(A: [Float], m: Int, n: Int, x: [Float]) -> [Float] {
   - Returns: A vector result of x divided by y.
 */
 public func div(x: [Float], y: [Float]) -> [Float] {
-  guard (x.count != y.count) else {
-    print("Vectors must be of equal length. Retuning first vector.")
-    return x
-  }
-  precondition(x.count == y.count, "Vectors must be of equal length.")
   var results = [Float](count: x.count, repeatedValue: 0.0)
   
   vvdivf(&results, x, y, [Int32(x.count)])

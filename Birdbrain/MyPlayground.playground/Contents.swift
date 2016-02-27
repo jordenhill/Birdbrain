@@ -43,12 +43,6 @@ sortedArray.insert(firstElement, atIndex: 0)
 array = sortedArray
 
 //
-
-var activateFunction = "sigmoid"
-
-print((activateFunction != "sigmoid") && (activateFunction != "tangent") && (activateFunction != "relu"))
-
-//
 var nextRandom = 1
 var layer1Size = 10000
 var a = 0
@@ -56,3 +50,13 @@ var b = 0
 var syn0 = [Float](count: 5000, repeatedValue: 0.0)
 nextRandom = nextRandom * 25214903917 + 11
 syn0[a * layer1Size + b] = ((Float(nextRandom & 0xFFFF) / Float(65536)) - 0.5) / Float(layer1Size);
+
+//
+var activateFunction = "sig"
+
+if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
+  (activateFunction != "relu")) {
+  activateFunction = "sigmoid"
+}
+
+activateFunction

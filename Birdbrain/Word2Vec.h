@@ -6,7 +6,16 @@
 //  Copyright © 2016 Jorden Hill. All rights reserved.
 //
 
+#ifndef Word2Vec_h
+#define Word2Vec_h
+
 #include "stdio.h"
+
+extern int min_count;
+extern long long train_words;
+extern int *vocab_hash;
+extern long long vocab_max_size;
+extern 
 
 void InitUnigramTable();
 void ReadWord(char *word, FILE *fin);
@@ -26,3 +35,4 @@ void *TrainModelThread(void *id);
 void TrainModel();
 int ArgPos(char *str, int argx, char **argv);
 int main(int argc, char **argv);
+#endif

@@ -22,24 +22,23 @@ public class FeedfowardNeuralNetwork {
     - Parameter activationFunction: Activation function to use 
       (1 - Sigmoid, 2, Hyperbolic Tangent, 3 - ReLu).
    */
-  public init? (sizes: [Int], useMetal: Bool, activateFunction: String) {
-    // Check that size and activationFunction are correct
-    if (sizes.count < 2) {
-      print("Size of network must be at least 2.")
-      return nil
-    }
-        
-    if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
-      (activateFunction != "relu")) {
-      print("Must use sigmoid, tangent, or relu as activateFunction parameter")
-      return nil
-    }
-    
+  public init (size: [Int], useMetal: Bool, activateFunction: String) {
     //Set initialization values.
-    numLayers = sizes.count
-    self.sizes = sizes
+    numLayers = size.count
+    self.sizes = size
     self.useMetal = useMetal
     self.activationFunction = activateFunction
+    
+    // Check if size and activationFunction are correct, if not, handle.
+    if (sizes.count < 2) {
+      print("Network must be at least two layers. Adding 100 neiron output layer.")
+      sizes.append(100)
+    }
+    
+    if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
+      (activateFunction != "relu")) {
+      activationFunction = "sigmoid"
+    }
     
     //Initialize the biases
     for y in sizes[1..<sizes.endIndex] {
@@ -119,26 +118,26 @@ public class FeedfowardNeuralNetwork {
   */
   private func GPUFeedforward(input: [Float]) -> [[Float]] {
     var activations = [[Float]]()
-    var layerInputs = input
+    var inputLayer = input
     var layer = 1
 
     for (b,w) in zip(biases,weights) {
-      let n = sizes[layer - 1]
-      let m = sizes[layer]
+      let n = sizes[layer]
+      let m = sizes[layer - 1]
       
       if (activationFunction == "sigmoid") { //Sigmoid
-        activations.append(mtlSigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(mtlSigmoid(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       } else if (activationFunction == "tangent") { //Hyperbolic tangent
-        activations.append(mtlTanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(mtlTanh(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       } else if (activationFunction == "relu") { //Rectified Linear
-        activations.append(mtlRelu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(mtlRelu(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       } else {
         print("No appropriate activation function entered.")
       }
       
       layer += 1
       
-      layerInputs = activations[activations.endIndex - 1]
+      inputLayer = activations[activations.endIndex - 1]
     }
     
     return activations
@@ -150,7 +149,7 @@ public class FeedfowardNeuralNetwork {
   */
   private func CPUFeedforward(input: [Float]) -> [[Float]] {
     var activations = [[Float]]()
-    var layerInputs = input
+    var inputLayer = input
     var layer = 1
     
     for (b,w) in zip(biases,weights) {
@@ -158,18 +157,20 @@ public class FeedfowardNeuralNetwork {
       let m = sizes[layer]
       
       if (activationFunction == "sigmoid") { //Sigmoid
-        activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
+        print("done")
       } else if (activationFunction == "tangent") { //Hyperbolic tangent
-        activations.append(tanh(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(tanh(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       } else if (activationFunction == "relu") { //Rectified Linear
-        activations.append(relu(add(mvMul(w, m: m, n: n, x: layerInputs), y: b)))
+        activations.append(relu(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       } else {
         print("No appropriate activation function entered.")
       }
       
       layer += 1
       
-      layerInputs = activations[activations.endIndex - 1]
+      // Get input from last layer.
+      inputLayer = activations[activations.endIndex - 1]
     }
     
     return activations
