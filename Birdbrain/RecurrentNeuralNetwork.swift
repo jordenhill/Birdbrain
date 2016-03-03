@@ -17,13 +17,13 @@ public class RecurrentNeuralNetwork {
   var whh: [Float]
   var activationFunction: String
   var useMetal: Bool
+  var GPU: MetalDevice!
   
   /**Initializer for Recurrent Neural Network
     - Parameter inputDim: Dimension of input vector to RNN.
     - Parameter hiddenDim: Dimension hidden vectors in RNN (number of input vectors).
   */
   public init(inputDim: Int, hiddenDim: Int, useMetal: Bool, activationFunction: String) {
-    
     self.inputDim = inputDim
     self.hiddenDim = hiddenDim
     self.activationFunction = activationFunction
@@ -31,6 +31,10 @@ public class RecurrentNeuralNetwork {
     whx = (1...hiddenDim * inputDim).map{_ in initRand(inputDim)}
     why = (1...inputDim * hiddenDim).map{_ in initRand(inputDim)}
     whh = (1...hiddenDim * hiddenDim).map{_ in initRand(hiddenDim)}
+    
+    if (useMetal == true) {
+      GPU = MetalDevice()
+    }
   }
   
   //MARK: Feedforward
@@ -70,7 +74,7 @@ public class RecurrentNeuralNetwork {
       }
     }
     
-    for i in Range(start: 0, end: target.count) {
+    for i in 0..<target.count {
       L.append(sum(mul(y[i], y: log(o[i]))))
     }
     
@@ -98,22 +102,12 @@ public class RecurrentNeuralNetwork {
     
     let dh = add(tmvMul(dwhy, m: inputDim, n: hiddenDim, x: deltaO), y: dhnext)
     
-    if (useMetal) {
-      if (activationFunction == "tangent") {
-        dhraw = mul(mtlTanhPrime(s[0]), y: dh)
-      } else if (activationFunction == "relu") {
-        dhraw = mul(mtlReluPrime(s[0]), y: dh)
-      } else {
-        dhraw = mul(mtlSigmoidPrime(s[0]), y: dh)
-      }
+    if (activationFunction == "tangent") {
+      dhraw = mul(tanhPrime(s[0]), y: dh)
+    } else if (activationFunction == "relu") {
+      dhraw = mul(reluPrime(s[0]), y: dh)
     } else {
-      if (activationFunction == "tangent") {
-        dhraw = mul(tanhPrime(s[0]), y: dh)
-      } else if (activationFunction == "relu") {
-        dhraw = mul(reluPrime(s[0]), y: dh)
-      } else {
-        dhraw = mul(sigmoidPrime(s[0]), y: dh)
-      }
+      dhraw = mul(sigmoidPrime(s[0]), y: dh)
     }
     
     dwhx = outer(dhraw, y: input[0])
@@ -133,22 +127,12 @@ public class RecurrentNeuralNetwork {
       
       let dh = add(tmvMul(dwhy, m: inputDim, n: hiddenDim, x: deltaO), y: dhnext)
       
-      if (useMetal) {
-        if (activationFunction == "tangent") {
-          dhraw = mul(mtlTanhPrime(s[t]), y: dh)
-        } else if (activationFunction == "relu") {
-          dhraw = mul(mtlReluPrime(s[t]), y: dh)
-        } else {
-          dhraw = mul(mtlSigmoidPrime(s[t]), y: dh)
-        }
+      if (activationFunction == "tangent") {
+        dhraw = mul(tanhPrime(s[t]), y: dh)
+      } else if (activationFunction == "relu") {
+        dhraw = mul(reluPrime(s[t]), y: dh)
       } else {
-        if (activationFunction == "tangent") {
-          dhraw = mul(tanhPrime(s[t]), y: dh)
-        } else if (activationFunction == "relu") {
-          dhraw = mul(reluPrime(s[t]), y: dh)
-        } else {
-          dhraw = mul(sigmoidPrime(s[t]), y: dh)
-        }
+        dhraw = mul(sigmoidPrime(s[t]), y: dh)
       }
       
       dwhx = add(dwhx, y: outer(dhraw, y: input[t]))
@@ -170,12 +154,12 @@ public class RecurrentNeuralNetwork {
     let T = input.count;
     var layers: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     
-    layers[0] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
-      y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
+    layers[0] = GPU.add(GPU.mvMul(whx, m: hiddenDim, n: inputDim, vector: input[0]),
+      y: GPU.mvMul(whh, m: hiddenDim, n: hiddenDim, vector: start))
     
-    for t in Range(start: 1, end: T) {
-      layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
-        y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
+    for t in 1 ..< T {
+      layers[t] = GPU.add(GPU.mvMul(whx, m: hiddenDim, n: inputDim, vector: input[t]),
+        y: GPU.mvMul(whh, m: hiddenDim, n: hiddenDim, vector: layers[t - 1]))
     }
     
     if (activationFunction == "tangent") {
@@ -193,9 +177,9 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
-      s[t] = mtlSigmoid(layers[t])
-      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    for t in 0 ..< T {
+      s[t] = GPU.sigmoid(layers[t])
+      o[t] = softmax(GPU.mvMul(why, m: inputDim, n: hiddenDim, vector: s[t]))
     }
     
     return (s, o)
@@ -205,9 +189,9 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
-      s[t] = mtlTanh(layers[t])
-      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    for t in 0 ..< T {
+      s[t] = GPU.tanh(layers[t])
+      o[t] = softmax(GPU.mvMul(why, m: inputDim, n: hiddenDim, vector: s[t]))
     }
     
     return (s, o)
@@ -217,9 +201,9 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
-      s[t] = mtlRelu(layers[t])
-      o[t] = mtlSoftmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
+    for t in 0 ..< T {
+      s[t] = GPU.relu(layers[t])
+      o[t] = softmax(GPU.mvMul(why, m: inputDim, n: hiddenDim, vector: s[t]))
 
     }
     
@@ -236,7 +220,7 @@ public class RecurrentNeuralNetwork {
     layers[0] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[0]),
       y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: start))
     
-    for t in Range(start: 1, end: T) {
+    for t in 1..<T {
       layers[t] = add(mvMul(whx, m: hiddenDim, n: inputDim, x: input[t]),
         y: mvMul(whh, m: hiddenDim, n: hiddenDim, x: layers[t - 1]))
     }
@@ -256,7 +240,7 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
+    for t in 0..<T {
       s[t] = sigmoid(layers[t])
       o[t] =  softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
     }
@@ -268,7 +252,7 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
+    for t in 0 ..< T {
       s[t] = tanh(layers[t])
       o[t] =  softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
     }
@@ -280,7 +264,7 @@ public class RecurrentNeuralNetwork {
     var s: [[Float]] = (1...T).map{_ in (1...hiddenDim).map{_ in 0.0}}
     var o: [[Float]] = (1...T).map{_ in (1...inputDim).map{_ in 0.0}}
     
-    for t in Range(start: 0, end: T) {
+    for t in 0 ..< T {
       s[t] = relu(layers[t])
       o[t] = softmax(mvMul(why, m: inputDim, n: hiddenDim, x: s[t]))
     }

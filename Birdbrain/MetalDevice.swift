@@ -5,282 +5,924 @@
 import Foundation
 import Metal
 
-func initMetal() -> (MTLDevice, MTLLibrary, MTLCommandBuffer, MTLComputeCommandEncoder) {
-  let device = MTLCreateSystemDefaultDevice()
-  let commandQueue = device!.newCommandQueue()
-  let library = device?.newDefaultLibrary()
-  let commandBuffer = commandQueue.commandBuffer()
-  let commandEncoder = commandBuffer.computeCommandEncoder()
-        
-  return (device!, library!, commandBuffer, commandEncoder)
-}
-
-//MARK: Vector Sum Function
-
-func performElementwiseFunction(function_name: String, vector: [Float]) -> [Float] {
-  let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let function = library.newFunctionWithName(function_name)
-  let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = function
-  //let computePipelineErrors = NSErrorPointer()
-  var computePipelineState:MTLComputePipelineState? = nil
-  var output = [Float](count: vector.count, repeatedValue: 0.0)
+class MetalDevice {
+  private var device: MTLDevice
+  private var commandQueue: MTLCommandQueue
+  private var pipelineState: MTLComputePipelineState!
+  private var commandBuffer: MTLCommandBuffer!
+  private var library: MTLLibrary!
   
-  do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
-  } catch {
-    print("catching..")
+  init() {
+    device = MTLCreateSystemDefaultDevice()!
+    commandQueue = device.newCommandQueue()
+    pipelineState = nil
+    library = device.newDefaultLibrary()!
   }
   
-  let inputBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  let outputBuffer = device.newBufferWithLength(output.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  
-  commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
-  commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
-  commandEncoder.setComputePipelineState(computePipelineState!)
-  
-  let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-  
-  let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
-  let numThreadgroups = MTLSize(width:(vector.count+threadExecutionWidth)/threadExecutionWidth,
-    height: 1, depth: 1)
-  computePipelineState?.threadExecutionWidth
-  computePipelineState?.maxTotalThreadsPerThreadgroup
-  
-  commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
-  commandEncoder.endEncoding()
-  commandBuffer.commit()
-  commandBuffer.waitUntilCompleted()
-  
-  let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count*sizeof(Float),
-    freeWhenDone: false)
-  
-  data.getBytes(&output, length:vector.count * sizeof(Float))
-  
-  return output
-}
-
-//MARK: Activation Function
-
-func performActivationFunction(function_name: String, input: [Float]) -> [Float] {
-  let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let function = library.newFunctionWithName(function_name)
-  let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = function
-  //let computePipelineErrors = NSErrorPointer()
-  var computePipelineState:MTLComputePipelineState? = nil
-  var output = [Float](count: input.count, repeatedValue: 0.0)
+  /** Perform a sigmoid nonlinearity function on the vector.
+   - Parameter vector: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func sigmoid(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("sigmoid")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
     
-  do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
-  } catch {
-    print("catching..")
-  }
-        
-  let inputBuffer = device.newBufferWithLength(input.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  let outputBuffer = device.newBufferWithLength(output.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  
-  commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
-  commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
-  commandEncoder.setComputePipelineState(computePipelineState!)
-        
-  let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-        
-  let threadsPerGroup = MTLSize(width: threadExecutionWidth,height:1,depth:1)
-  let numThreadgroups = MTLSize(width:(input.count+threadExecutionWidth)/threadExecutionWidth,
-    height: 1, depth: 1)
-  
-  commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
-  commandEncoder.endEncoding()
-  commandBuffer.commit()
-  commandBuffer.waitUntilCompleted()
-        
-  let data = NSData(bytesNoCopy: outputBuffer.contents(), length: input.count*sizeof(Float),
-    freeWhenDone: false)
-  
-  data.getBytes(&output, length:input.count * sizeof(Float))
-    
-  return output
-}
-
-//MARK: Matrix-Vector Function
-
-func performMatVecFunction(functionName: String, matrix: [Float], m: Int, n: Int,
-  vector: [Float]) -> [Float] {
-  
-    let (device, library, commandBuffer, commandEncoder) = initMetal()
-    let function = library.newFunctionWithName(functionName)
-    let pipelineDescriptor = MTLComputePipelineDescriptor()
-    pipelineDescriptor.computeFunction = function
-    //let computePipelineErrors = NSErrorPointer()
-    var computePipelineState:MTLComputePipelineState? = nil
-    var outputVector: [Float] = (1...m).map{_ in 0.0}
-    let dims: [UInt16] = [UInt16(m), UInt16(n)]
-  
     do {
-      computePipelineState = try device.newComputePipelineStateWithFunction(function!)
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
     } catch {
-      print("catching..")
+      print("Caught error when trying to create computePipelineState!")
     }
-  
-    let matrixBuffer = device.newBufferWithLength(matrix.count * sizeof(Float),
-      options: MTLResourceOptions.CPUCacheModeDefaultCache)
-    let vectorBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
-      options: MTLResourceOptions.CPUCacheModeDefaultCache)
-    let dimBuffer = device.newBufferWithLength(dims.count * sizeof(UInt16),
-      options: MTLResourceOptions.CPUCacheModeDefaultCache)
-    let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
-      options: MTLResourceOptions.CPUCacheModeDefaultCache)
-
-    commandEncoder.setBuffer(matrixBuffer, offset: 0, atIndex: 0)
-    commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 1)
-    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 2)
-    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 3)
-    commandEncoder.setComputePipelineState(computePipelineState!)
-
-    let threadsPerGroup = MTLSize(width: 32, height: 1, depth:1)
-    let numThreadgroups = MTLSize(width:(256 + 31) / 32, height: 1, depth: 1)
-  
-    let time = NSDate()
-    commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+        
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
     commandEncoder.endEncoding()
+    
     commandBuffer.commit()
     commandBuffer.waitUntilCompleted()
-    print(NSDate().timeIntervalSinceDate(time))
-
-    let data = NSData(bytesNoCopy: outputBuffer.contents(),
-      length: vector.count*sizeof(Float), freeWhenDone: false)
     
-    data.getBytes(&outputVector, length: m * sizeof(Float))
-
-    return outputVector
-}
-
-//MARK: Vector-Vector Function
-
-func performVecVecFunction(functionName: String, vectorX: [Float], vectorY: [Float]) -> [Float] {
-  let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let function = library.newFunctionWithName(functionName)
-  let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = function
-  //let computePipelineErrors = NSErrorPointer()
-  var computePipelineState:MTLComputePipelineState? = nil
-  var outputVector: [Float] = (1...vectorX.count).map{_ in 0.0}
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
     
-  do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
-  } catch {
-    print("catching..")
+    return output
   }
-    
-  let vectorXBuffer = device.newBufferWithLength(vectorX.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  let vectorYBuffer = device.newBufferWithLength(vectorY.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
   
-  commandEncoder.setBuffer(vectorXBuffer, offset: 0, atIndex: 0)
-  commandEncoder.setBuffer(vectorYBuffer, offset: 0, atIndex: 1)
-  commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
-  commandEncoder.setComputePipelineState(computePipelineState!)
-  
-  //let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-  let threadsPerGroup = MTLSize(width: 32, height:1, depth:1)
-  let numThreadgroups = MTLSize(width: (256 + 31) / 32, height: 1, depth: 1)
-  
-  commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
-  commandEncoder.endEncoding()
-  commandBuffer.commit()
-  commandBuffer.waitUntilCompleted()
-    
-  let data = NSData(bytesNoCopy: outputBuffer.contents(),
-    length: vectorX.count*sizeof(Float), freeWhenDone: false)
-  
-  data.getBytes(&outputVector, length:vectorX.count * sizeof(Float))
-  
-  return outputVector
-}
+  /** Perform a hyperbolic tangent nonlinearity function on the vector.
+   - Parameter vecotr: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func tanh(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("tanh")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
 
-//MARK: Vector-Scalar function
-
-func performVecScalFunction(functionName: String, vector: [Float], scalar: Float) -> [Float] {
-  let (device, library, commandBuffer, commandEncoder) = initMetal()
-  let function = library.newFunctionWithName(functionName)
-  let sigmoidPipelineDescriptor = MTLComputePipelineDescriptor()
-  sigmoidPipelineDescriptor.computeFunction = function
-  //let computePipelineErrors = NSErrorPointer()
-  var computePipelineState:MTLComputePipelineState? = nil
-  var outputVector = [Float](count: vector.count, repeatedValue: 0.0)
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
     
-  do {
-    computePipelineState = try device.newComputePipelineStateWithFunction(function!)
-  } catch {
-    print("catching..")
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
   }
+  
+  /** Perform a hyperbolic tangent nonlinearity function on the vector.
+   - Parameter vector: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func relu(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("relu")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
 
-  let vectorBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-  let scalarBuffer = createScalarBuffer(scalar, device: device)
-  let outputBuffer = device.newBufferWithLength(outputVector.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
     
-  commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 0)
-  commandEncoder.setBuffer(scalarBuffer, offset: 0, atIndex: 1)
-  commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
-  
-  let threadExecutionWidth = computePipelineState!.threadExecutionWidth
-  let threadsPerGroup = MTLSize(width:threadExecutionWidth,height:1,depth:1)
-  let numThreadgroups = MTLSize(width:(vector.count + threadExecutionWidth) /
-    threadExecutionWidth, height: 1, depth: 1)
-  
-  commandEncoder.setComputePipelineState(computePipelineState!)
-  commandEncoder.dispatchThreadgroups(numThreadgroups, threadsPerThreadgroup: threadsPerGroup)
-  
-  commandEncoder.endEncoding()
-  commandBuffer.commit()
-  commandBuffer.waitUntilCompleted()
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
     
-  let data = NSData(bytesNoCopy: outputBuffer.contents(),
-    length: vector.count*sizeof(Float), freeWhenDone: false)
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
   
-  data.getBytes(&outputVector, length:vector.count * sizeof(Float))
+  /** Perform a sigmoid nonlinearity function on the vector.
+   - Parameter vector: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func sigmoidPrime(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("sigmoid_prime")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
   
-  return outputVector
-}
+  /** Perform a hyperbolic tangent nonlinearity function on the vector.
+   - Parameter vecotr: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func tanhPrime(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("tanh_prime")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
 
-
-//MARK: Extra Methods
-
-func createBuffer(var vector: [Float], device: MTLDevice) -> MTLBuffer {  
-  //Create a new buffer with this byte length
-  let buffer = device.newBufferWithBytes(&vector, length: vector.count * sizeof(Float),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
   
-  return buffer
-}
+  /** Perform a hyperbolic tangent nonlinearity function on the vector.
+   - Parameter vector: The vector.
+   - Returns: The result of applying the function to the vector.
+   */
+  func reluPrime(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("relu_prime")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
 
-func createDimBuffer(var dims: [UInt16], device: MTLDevice) -> MTLBuffer {
-
-  return device.newBufferWithBytes(&dims, length: 2 * sizeof(UInt16),
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-
-}
-
-func createScalarBuffer(var scalar: Float, device: MTLDevice) -> MTLBuffer {
-  let byteLength = sizeof(Float)
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float),
+                                                 options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
+                                                  options: MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
   
-  return device.newBufferWithBytes(&scalar, length: byteLength,
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
-}
+  /** Perform elementwise negation of the vector
+   - Parameter x: The vector.
+   - Returns: The vector with every element negated.
+   */
+  func neg(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("neg")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
 
-func createScalarBuffer(var scalar: Int, device: MTLDevice) -> MTLBuffer {
-  let byteLength = sizeof(Int)
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
   
-  return device.newBufferWithBytes(&scalar, length: byteLength,
-    options: MTLResourceOptions.CPUCacheModeDefaultCache)
+  /** Perform elementwise exponentiation of the vector
+   - Parameter x: The vector.
+   - Returns: The vector with every element exponentiated.
+   */
+  func exp(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("exp")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Perform elementwise square of the vector
+   - Parameter x: The vector.
+   - Returns: The vector with every element squared.
+   */
+  func square(vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("square")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let inputBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(inputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(vector.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Add two vectors.
+   - Parameter x: First vector.
+   - Parameter y: Second vector.
+   - Returns: The result of adding vectors x and y.
+   */
+  func add(x: [Float], y: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("add")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let dim: [UInt16] = [UInt16(x.count)]
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(y, length: y.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let dimBuffer = device.newBufferWithBytes(dim, length: sizeof(UInt16), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Add a scalar value to a vector.
+   - Parameter x: The vector.
+   - Parameter c: The scalar.
+   - Returns: The result of adding scalar c elementwise to vector x.
+   */
+  func scalAdd(x: [Float], c: Float) -> [Float] {
+    let function = library.newFunctionWithName("scalar_add")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let scalar: [Float] = [c]
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(scalar, length: sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Subtract two vectors.
+   - Parameter x: First vector.
+   - Parameter y: Second vector.
+   - Returns: The result of subtracting vector y from vector x.
+   */
+  func sub(x: [Float], y: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("subtract")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let dim: [UInt16] = [UInt16(x.count)]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(y, length: y.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let dimBuffer = device.newBufferWithBytes(dim, length: sizeof(UInt16), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Subtract a scalar value elementwise from a vector.
+   - Parameter x: The vector.
+   - Parameter c: The scalar.
+   - Returns: The result of subtracting scalar c from vector x.
+   */
+  func scalSub(x: [Float], c: Float) -> [Float] {
+    let function = library.newFunctionWithName("scalar_subtract")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let scalar: [Float] = [c]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(scalar, length: sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Multiply two vectors
+   - Parameter x: First vector.
+   - Parameter y: Second vector.
+   - Returns: The result of multiplying vectors x and y.
+   */
+  func mul(x: [Float], y: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("multiply")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let dim: [UInt16] = [UInt16(x.count)]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(y, length: y.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let dimBuffer = device.newBufferWithBytes(dim, length: sizeof(UInt16), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Multiply a scalar value elementwise to a vector.
+   - Parameter x: The vector.
+   - Parameter c: The scalar.
+   - Returns: The result of multiplying a scalar c elementwise by vector x.
+   */
+  func scalMul(x: [Float], c: Float) -> [Float] {
+    let function = library.newFunctionWithName("scalar_multiply")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let scalar: [Float] = [c]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(scalar, length: sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Divide two vectors
+   - Parameter x: First vector.
+   - Parameter y: Second vector.
+   - Returns: The result of dividing vectors x by vector y.
+   */
+  func div(x: [Float], y: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("divide")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let dim: [UInt16] = [UInt16(x.count)]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(y, length: y.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let dimBuffer = device.newBufferWithBytes(dim, length: sizeof(UInt16), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(dimBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Divide a vector elementwise by a scalar value.
+   - Parameter x: The vector.
+   - Parameter c: The scalar.
+   - Returns: The result of dividing vector x elementwise by scalar c.
+   */
+  func scalDiv(x: [Float], c: Float) -> [Float] {
+    let function = library.newFunctionWithName("scalar_divide")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    var output = [Float](count: x.count, repeatedValue: 0.0)
+    let scalar: [Float] = [c]
+    commandBuffer = commandQueue.commandBuffer()
+    
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    
+    let firstInputBuffer = device.newBufferWithBytes(x, length: x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let secondInputBuffer = device.newBufferWithBytes(scalar, length: sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    let outputBuffer = device.newBufferWithLength(x.count * sizeof(Float), options:
+      MTLResourceOptions.CPUCacheModeDefaultCache)
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(firstInputBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(secondInputBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(x.count))
+    threadGroups.width = pow
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: output.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: output.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Multiply a matrix by a vector
+   - Parameter matrix: The matrix.
+   - Parameter m: Number of rows in matrix.
+   - Parameter n: Number of columns in matrix.
+   - Parameter vector: The vector.
+   - Returns: The result of dividing vectors x by vector y.
+   */
+  func mvMul(matrix: [Float], m: Int, n: Int, vector: [Float]) -> [Float] {
+    let function = library.newFunctionWithName("matrixvector_multiply")
+    var threadGroupSize: MTLSize
+    var threadGroups: MTLSize
+    let dims: [UInt32] = [UInt32(m), UInt32(n)]
+    var output = [Float](count: vector.count, repeatedValue: 0.0)
+    commandBuffer = commandQueue.commandBuffer()
+
+    do {
+      pipelineState = try device.newComputePipelineStateWithFunction(function!)
+    } catch {
+      print("Caught error when trying to create computePipelineState!")
+    }
+    let matrixBuffer = device.newBufferWithBytes(matrix, length: matrix.count * sizeof(Float),
+                                                 options: MTLResourceOptions.StorageModeManaged)
+    let vectorBuffer = device.newBufferWithBytes(vector, length: vector.count * sizeof(Float),
+                                                 options: MTLResourceOptions.StorageModeManaged)
+    let dimsBuffer = device.newBufferWithBytes(dims, length: dims.count * sizeof(UInt32),
+                                               options: MTLResourceOptions.StorageModeManaged)
+    let outputBuffer = device.newBufferWithLength(vector.count * sizeof(Float),
+                                                  options:MTLResourceOptions.StorageModeManaged)
+    
+    threadGroupSize = MTLSizeMake(128, 1, 1)
+    threadGroups = MTLSizeMake(0, 1, 1)
+    
+    let pow = Int(nearestPower2(m))
+    threadGroups.width = pow
+    
+    let commandEncoder = commandBuffer.computeCommandEncoder()
+    commandEncoder.setBuffer(matrixBuffer, offset: 0, atIndex: 0)
+    commandEncoder.setBuffer(vectorBuffer, offset: 0, atIndex: 1)
+    commandEncoder.setBuffer(dimsBuffer, offset: 0, atIndex: 2)
+    commandEncoder.setBuffer(outputBuffer, offset: 0, atIndex: 3)
+    commandEncoder.setThreadgroupMemoryLength(vector.count * 16, atIndex: 4)
+    commandEncoder.setComputePipelineState(pipelineState!)
+    
+    commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
+    commandEncoder.endEncoding()
+    
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+    
+    let data = NSData(bytesNoCopy: outputBuffer.contents(), length: vector.count * sizeof(Float),
+                      freeWhenDone: false)
+    data.getBytes(&output, length: vector.count * sizeof(Float))
+    
+    return output
+  }
+  
+  /** Find the nearest power of 2 for a number
+   - Parameter num: the number to find the nearest power 2 of.
+   - Returns: The nearest power 2 of num (30 -> 32, 200 -> 256).
+   */
+  private func nearestPower2(num: Int) -> Int {
+    var n: Int = num > 0 ? num - 1 : 0;
+    
+    n |= n >> 1
+    n |= n >> 2
+    n |= n >> 4
+    n |= n >> 8
+    n |= n >> 16
+    n += 1
+    
+    return n
+  }
 }
