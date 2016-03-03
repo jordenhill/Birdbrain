@@ -6,7 +6,7 @@
 //  Copyright © 2015 Jorden Hill. All rights reserved.
 //
 
-// USEFUL REFERENCE FROM OPENCL -> METAL:
+// USEFUL PROPERTIES THAT COMPARE OPENCL TO METAL:
 // get_global_id = thread_position_in_grid
 // get_local_id = thread_position_in_threadgroup
 // get_global_size = thread_execution_width
@@ -14,8 +14,10 @@
 // get_group_id = threadgroup_position_in_grid
 // get_num_groups = threadgroups_per_grid
 
+#define WARP_SIZE 32
 #include <metal_stdlib>
 using namespace metal;
+
 
 typedef struct
 {
@@ -146,7 +148,6 @@ kernel void divide(device float *x [[buffer(0)]],
   if (id >= m) {
     return;
   }
-  
   z[id] = x[id] / y[id];
 }
 
@@ -157,8 +158,6 @@ kernel void scalar_divide(device float *A [[buffer(0)]],
 {
   y[id] = A[id] / c[0];
 }
-
-#define WARP_SIZE 32
  
 kernel void matrixvector_multiply(device float *A [[buffer(0)]],
                                   device float *x [[buffer(1)]],

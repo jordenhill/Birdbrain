@@ -9,8 +9,11 @@
 import XCTest
 import Foundation
 import Birdbrain
+import MetalKit
+import Metal
 
 class FeedForwardNetworkTest: XCTestCase {
   let size1 = [10, 100, 10]
   let size2 = [10]
+  
 }

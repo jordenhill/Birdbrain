@@ -7,19 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BC00903E1BBB22700086F758 /* Birdbrain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0090331BBB22700086F758 /* Birdbrain.framework */; };
 		BC0090431BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090421BBB22710086F758 /* FeedforwardNeuralNetworldTests.swift */; };
 		BC00904E1BBB23390086F758 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC00904D1BBB23390086F758 /* Accelerate.framework */; };
 		BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */; };
 		BC0090521BBB24170086F758 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090511BBB24170086F758 /* Math.swift */; };
-		BC6C9E8A1C8158C000E83E50 /* word2vec.c in Sources */ = {isa = PBXBuildFile; fileRef = BC6C9E891C8158C000E83E50 /* word2vec.c */; };
+		BC0621F61C882E0600AB7D5E /* Birdbrain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0090331BBB22700086F758 /* Birdbrain.framework */; };
+		BC0621F91C8841AB00AB7D5E /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC0621F71C8841AB00AB7D5E /* MetalFunctions.metal */; };
+		BC0621FA1C8841AB00AB7D5E /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0621F81C8841AB00AB7D5E /* MetalDevice.swift */; };
 		BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
 		BCD993761C7EE29B005A93ED /* Birdbrain-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = BCD993751C7EE29B005A93ED /* Birdbrain-Bridging-Header.h */; };
-		BCD993871C7EE8F9005A93ED /* Word2Vec.h in Headers */ = {isa = PBXBuildFile; fileRef = BCD993861C7EE8F9005A93ED /* Word2Vec.h */; };
 		BCDFE1501C068C6200BA1A65 /* BirdbrainMathTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */; };
-		BCED1B1B1C87C74700C7DD86 /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCED1B1A1C87C74700C7DD86 /* MetalDevice.swift */; };
-		BCED1B1D1C87C75700C7DD86 /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BCED1B1C1C87C75700C7DD86 /* MetalFunctions.metal */; };
-		BCEDA4411C7CC5CC0086EF9A /* FileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCEDA4401C7CC5CC0086EF9A /* FileReader.swift */; };
 		BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */; };
 		BCF7F4E01C10340800AAFBE0 /* LSTMNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */; };
 /* End PBXBuildFile section */
@@ -43,19 +40,12 @@
 		BC00904D1BBB23390086F758 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedforwardNeuralNetwork.swift; sourceTree = "<group>"; };
 		BC0090511BBB24170086F758 /* Math.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
+		BC0621F71C8841AB00AB7D5E /* MetalFunctions.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = MetalFunctions.metal; sourceTree = "<group>"; };
+		BC0621F81C8841AB00AB7D5E /* MetalDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalDevice.swift; sourceTree = "<group>"; };
 		BC32C8F21BC79EE600D92D94 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		BC6C9E821C81534C00E83E50 /* word-analogy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "word-analogy.c"; sourceTree = "<group>"; };
-		BC6C9E871C81579400E83E50 /* distance.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = distance.c; sourceTree = "<group>"; };
-		BC6C9E881C8157BE00E83E50 /* compute-accuracy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "compute-accuracy.c"; sourceTree = "<group>"; };
-		BC6C9E891C8158C000E83E50 /* word2vec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = word2vec.c; sourceTree = "<group>"; };
-		BC9744BE1C80CA030034473F /* word2phrase.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = word2phrase.c; sourceTree = "<group>"; };
 		BCD993751C7EE29B005A93ED /* Birdbrain-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Birdbrain-Bridging-Header.h"; sourceTree = "<group>"; };
-		BCD993861C7EE8F9005A93ED /* Word2Vec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Word2Vec.h; sourceTree = "<group>"; };
 		BCDFE14F1C068C6200BA1A65 /* BirdbrainMathTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BirdbrainMathTest.swift; sourceTree = "<group>"; };
-		BCED1B1A1C87C74700C7DD86 /* MetalDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalDevice.swift; sourceTree = "<group>"; };
-		BCED1B1C1C87C75700C7DD86 /* MetalFunctions.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = MetalFunctions.metal; sourceTree = "<group>"; };
 		BCEDA43F1C7CB4AA0086EF9A /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; };
-		BCEDA4401C7CC5CC0086EF9A /* FileReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileReader.swift; sourceTree = "<group>"; };
 		BCF7F4DD1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecurrentNeuralNetwork.swift; sourceTree = "<group>"; };
 		BCF7F4DF1C10340800AAFBE0 /* LSTMNetwork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LSTMNetwork.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -67,6 +57,7 @@
 			files = (
 				BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */,
 				BC00904E1BBB23390086F758 /* Accelerate.framework in Frameworks */,
+				BC0621F61C882E0600AB7D5E /* Birdbrain.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,7 +65,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC00903E1BBB22700086F758 /* Birdbrain.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,8 +94,6 @@
 		BC0090351BBB22700086F758 /* Birdbrain */ = {
 			isa = PBXGroup;
 			children = (
-				BC6C9E861C81560F00E83E50 /* word-analogy.c */,
-				BCD993791C7EE454005A93ED /* Word2Vec */,
 				BCEDA43F1C7CB4AA0086EF9A /* MyPlayground.playground */,
 				BCF7F4E71C1142F300AAFBE0 /* Other */,
 				BCF7F4E61C113F9500AAFBE0 /* Metal */,
@@ -124,26 +112,6 @@
 				BC0090441BBB22710086F758 /* Info.plist */,
 			);
 			path = BirdbrainTests;
-			sourceTree = "<group>";
-		};
-		BC6C9E861C81560F00E83E50 /* word-analogy.c */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "word-analogy.c";
-			sourceTree = "<group>";
-		};
-		BCD993791C7EE454005A93ED /* Word2Vec */ = {
-			isa = PBXGroup;
-			children = (
-				BC6C9E881C8157BE00E83E50 /* compute-accuracy.c */,
-				BC6C9E871C81579400E83E50 /* distance.c */,
-				BC9744BE1C80CA030034473F /* word2phrase.c */,
-				BC6C9E821C81534C00E83E50 /* word-analogy.c */,
-				BC6C9E891C8158C000E83E50 /* word2vec.c */,
-				BCD993861C7EE8F9005A93ED /* Word2Vec.h */,
-			);
-			name = Word2Vec;
 			sourceTree = "<group>";
 		};
 		BCF7F4E41C113F6200AAFBE0 /* Math */ = {
@@ -167,8 +135,8 @@
 		BCF7F4E61C113F9500AAFBE0 /* Metal */ = {
 			isa = PBXGroup;
 			children = (
-				BCED1B1A1C87C74700C7DD86 /* MetalDevice.swift */,
-				BCED1B1C1C87C75700C7DD86 /* MetalFunctions.metal */,
+				BC0621F71C8841AB00AB7D5E /* MetalFunctions.metal */,
+				BC0621F81C8841AB00AB7D5E /* MetalDevice.swift */,
 			);
 			name = Metal;
 			sourceTree = "<group>";
@@ -177,7 +145,6 @@
 			isa = PBXGroup;
 			children = (
 				BC0090381BBB22700086F758 /* Info.plist */,
-				BCEDA4401C7CC5CC0086EF9A /* FileReader.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -189,7 +156,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BCD993871C7EE8F9005A93ED /* Word2Vec.h in Headers */,
 				BCD993761C7EE29B005A93ED /* Birdbrain-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -239,6 +205,9 @@
 		BC00902A1BBB22700086F758 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				KnownAssetTags = (
+					New,
+				);
 				LastSwiftUpdateCheck = 0730;
 				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Jorden Hill";
@@ -292,13 +261,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				BCF7F4E01C10340800AAFBE0 /* LSTMNetwork.swift in Sources */,
+				BC0621F91C8841AB00AB7D5E /* MetalFunctions.metal in Sources */,
 				BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */,
-				BCED1B1B1C87C74700C7DD86 /* MetalDevice.swift in Sources */,
 				BCF7F4DE1C0EA3F500AAFBE0 /* RecurrentNeuralNetwork.swift in Sources */,
-				BCEDA4411C7CC5CC0086EF9A /* FileReader.swift in Sources */,
-				BCED1B1D1C87C75700C7DD86 /* MetalFunctions.metal in Sources */,
 				BC0090521BBB24170086F758 /* Math.swift in Sources */,
-				BC6C9E8A1C8158C000E83E50 /* word2vec.c in Sources */,
+				BC0621FA1C8841AB00AB7D5E /* MetalDevice.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

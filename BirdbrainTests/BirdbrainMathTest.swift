@@ -22,7 +22,6 @@ class BirdbrainMathTest: XCTestCase {
     
     func testVectorSum() {
         XCTAssertEqual(sum(testVector1),  3.0, "Wrong vector sum")
-      
     }
     
     func testVectorAddition() {
@@ -71,8 +70,8 @@ class BirdbrainMathTest: XCTestCase {
     
     func testMatrixFormation() {
         XCTAssertTrue(outer(testMatrix1, y: testMatrix2) == [1.0, 2.0,  3.0,  4.0,
-                                                                  2.0, 4.0,  6.0,  8.0,
-                                                                  3.0, 6.0,  9.0, 12.0,
-                                                                  4.0, 8.0, 12.0, 16.0], "Wrong matrix formation result")
+                                                             2.0, 4.0,  6.0,  8.0,
+                                                             3.0, 6.0,  9.0, 12.0,
+                                                             4.0, 8.0, 12.0, 16.0], "Wrong matrix formation result")
     }
 }
