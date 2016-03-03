@@ -11,7 +11,6 @@
 		BC00904E1BBB23390086F758 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC00904D1BBB23390086F758 /* Accelerate.framework */; };
 		BC0090501BBB238F0086F758 /* FeedforwardNeuralNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00904F1BBB238F0086F758 /* FeedforwardNeuralNetwork.swift */; };
 		BC0090521BBB24170086F758 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0090511BBB24170086F758 /* Math.swift */; };
-		BC0621F61C882E0600AB7D5E /* Birdbrain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0090331BBB22700086F758 /* Birdbrain.framework */; };
 		BC0621F91C8841AB00AB7D5E /* MetalFunctions.metal in Sources */ = {isa = PBXBuildFile; fileRef = BC0621F71C8841AB00AB7D5E /* MetalFunctions.metal */; };
 		BC0621FA1C8841AB00AB7D5E /* MetalDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0621F81C8841AB00AB7D5E /* MetalDevice.swift */; };
 		BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC32C8F21BC79EE600D92D94 /* Metal.framework */; };
@@ -57,7 +56,6 @@
 			files = (
 				BC886A2B1C14B19300A28840 /* Metal.framework in Frameworks */,
 				BC00904E1BBB23390086F758 /* Accelerate.framework in Frameworks */,
-				BC0621F61C882E0600AB7D5E /* Birdbrain.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
