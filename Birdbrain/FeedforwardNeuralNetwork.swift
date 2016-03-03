@@ -15,6 +15,7 @@ public class FeedfowardNeuralNetwork {
   var weights = [[Float]]()
   var useMetal: Bool
   var activationFunction: String
+  var GPU: MetalDevice!
     
   /**Constructor for Feedforward Neural Network.
     - Parameter sizes: The number of layers and size of each layer in the network.
@@ -38,6 +39,11 @@ public class FeedfowardNeuralNetwork {
     if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
       (activateFunction != "relu")) {
       activationFunction = "sigmoid"
+    }
+    
+    //Construct Metal Device if using Metal
+    if (useMetal) {
+      GPU = MetalDevice()
     }
     
     //Initialize the biases
@@ -126,11 +132,11 @@ public class FeedfowardNeuralNetwork {
       let m = sizes[layer - 1]
       
       if (activationFunction == "sigmoid") { //Sigmoid
-        activations.append(mtlSigmoid(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
+        activations.append(GPU.sigmoid(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
       } else if (activationFunction == "tangent") { //Hyperbolic tangent
-        activations.append(mtlTanh(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
+        activations.append(GPU.tanh(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
       } else if (activationFunction == "relu") { //Rectified Linear
-        activations.append(mtlRelu(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
+        activations.append(GPU.relu(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
       } else {
         print("No appropriate activation function entered.")
       }
@@ -188,7 +194,7 @@ public class FeedfowardNeuralNetwork {
     var nablaW = [[Float]]()
         
     if (useMetal) {
-      (nablaB, nablaW) = mtlBackprop(input, target: target)
+      (nablaB, nablaW) = gpuBackprop(input, target: target)
     } else {
       (nablaB, nablaW) = backprop(input, target: target)
     }
@@ -285,7 +291,7 @@ public class FeedfowardNeuralNetwork {
    - Parameter target: Target output of the network.
    - Returns: The changes in the weights and biases of the network.
    */
-  private func mtlBackprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
+  private func gpuBackprop(input: [Float], target: [Float]) -> ([[Float]], [[Float]]){
     //Build namblaW and namblaB
     var nablaW = [[Float]]()
     var nablaB = [[Float]]()
@@ -308,16 +314,16 @@ public class FeedfowardNeuralNetwork {
     for (b, w) in zip(biases, weights) {
       m = sizes[layer]
       n = sizes[layer - 1]
-      let z = add(mvMul(w, m: m, n: n, x: layerInput), y: b)
+      let z = GPU.add(GPU.mvMul(w, m: m, n: n, vector: layerInput), y: b)
 
       zVals.append(z)
                 
       if (activationFunction == "sigmoid") {
-        layerInput = mtlSigmoid(z)
+        layerInput = GPU.sigmoid(z)
       } else if (activationFunction == "tangent") {
-        layerInput = mtlTanh(z)
+        layerInput = GPU.tanh(z)
       } else {
-        layerInput = mtlRelu(z)
+        layerInput = GPU.relu(z)
       }
             
       layer += 1
@@ -327,14 +333,14 @@ public class FeedfowardNeuralNetwork {
         
     //Create delta for last layer based on output, do a backward pass
     if (activationFunction == "sigmoid") {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: mtlSigmoidPrime(zVals[zVals.endIndex - 1]))
+      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
+        y: GPU.sigmoidPrime(zVals[zVals.endIndex - 1]))
     } else if (activationFunction == "tangent") {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: mtlTanhPrime(zVals[zVals.endIndex - 1]))
+      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
+        y: GPU.tanhPrime(zVals[zVals.endIndex - 1]))
     } else {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: mtlReluPrime(zVals[zVals.endIndex - 1]))
+      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
+        y: GPU.reluPrime(zVals[zVals.endIndex - 1]))
     }
         
     nablaB[nablaB.endIndex - 1] = delta
@@ -345,17 +351,17 @@ public class FeedfowardNeuralNetwork {
     
     for l in 2 ..< numLayers {
       let z = zVals[zVals.endIndex - l]
-      let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
-        n: sizes[sizes.endIndex - l + 1], x: delta)
+      let partialDelta = GPU.mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
+        n: sizes[sizes.endIndex - l + 1], vector: delta)
       
       if (activationFunction == "sigmoid") {
-        delta = mul(partialDelta, y: mtlSigmoidPrime(z))
+        delta = GPU.mul(partialDelta, y: GPU.sigmoidPrime(z))
       }
       else if (activationFunction == "tangent") {
-        delta = mul(partialDelta, y: mtlTanhPrime(z))
+        delta = GPU.mul(partialDelta, y: GPU.tanhPrime(z))
       }
       else {
-        delta = mul(partialDelta, y: mtlReluPrime(z))
+        delta = GPU.mul(partialDelta, y: GPU.reluPrime(z))
       }
       
       nablaB[nablaB.endIndex - l] = delta

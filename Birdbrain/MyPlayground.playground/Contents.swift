@@ -60,3 +60,7 @@ if ((activateFunction != "sigmoid") && (activateFunction != "tangent") &&
 }
 
 activateFunction
+
+//Array construction
+var x = [Float](count: 10, repeatedValue: 1)
+var y = [Float](x)

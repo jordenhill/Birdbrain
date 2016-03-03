@@ -52,10 +52,11 @@ public func add(x: [Float], c: Float) -> [Float] {
   - Parameter y: Vector y.
   - Returns: A vector containing the difference of x and y.
 */
-public func sub(x: [Float], var y: [Float]) -> [Float] {
-  catlas_saxpby(Int32(y.count), 1.0, x, Int32(1), -1.0, &y, Int32(1))
+public func sub(x: [Float], y: [Float]) -> [Float] {
+  var result = [Float](x)
   
-  return y
+  vDSP_vsub(y, 1, x, 1, &result, 1, vDSP_Length(x.count))
+  return result
 }
 
 /** Subtract a scalar c from a vector x.
@@ -79,7 +80,6 @@ public func sub(x: [Float], c: Float) -> [Float] {
   - Returns: The product of vector x and vector y.
 */
 public func mul(x: [Float], y: [Float]) -> [Float] {
-  
   var result = [Float](count: x.count, repeatedValue: 0.0)
   
   vDSP_vmul(x, 1, y, 1, &result, 1, vDSP_Length(x.count))
@@ -92,11 +92,12 @@ public func mul(x: [Float], y: [Float]) -> [Float] {
   - Parameter c: scalar c.
   - Returns: The product of vector x multiplied elementwise by scalar c.
 */
-public func mul(var x: [Float], c: Float) -> [Float] {
+public func mul(x: [Float], c: Float) -> [Float] {
+  var result = [Float](x)
+    
+  cblas_sscal(Int32(x.count), c, &result, 1)
   
-  cblas_sscal(Int32(x.count), c, &x, 1)
-  
-  return x
+  return result
 }
 
 /**Multiply a matrix A by a vector x.

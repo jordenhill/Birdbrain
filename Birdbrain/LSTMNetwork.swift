@@ -44,7 +44,8 @@ public class LSTMNetwork {
   }
   
   private func GPUCompute(input: [[Float]]) -> ([[Float]], [[Float]], [[Float]]) {
-    let T = input.count;
+    let GPU = MetalDevice()
+    let T = input.count
     let start: [Float] = (1...memCellCount).map{_ in 0.0}
     var g: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
     var f: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
@@ -54,29 +55,29 @@ public class LSTMNetwork {
     var h: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
     var y: [[Float]] = (1...T).map{_ in (1...memCellCount).map{_ in 0.0} }
     
-    g[0] = mtlTanh(mtlAdd(mvMul(wgx, m: memCellCount, n: inputDim, x: input[0]),
-      y: mvMul(wgh, m: memCellCount, n: memCellCount, x: start)))
-    i[0] = mtlSigmoid(mtlAdd(mvMul(wix, m: memCellCount, n: inputDim, x: input[0]),
-      y: mvMul(wih, m: memCellCount, n: memCellCount, x: start)))
-    f[0] = mtlSigmoid(mtlAdd(mvMul(wfx, m: memCellCount, n: inputDim, x: input[0]),
-      y: mvMul(wfh, m: memCellCount, n: memCellCount, x: start)))
-    o[0] = mtlSigmoid(mtlAdd(mvMul(wox, m: memCellCount, n: inputDim, x: input[0]),
-      y: mvMul(woh, m: memCellCount, n: memCellCount, x: start)))
-    s[0] = add(mtlMul(g[0], y: i[0]), y: mul(s[0], y: f[0]))
+    g[0] = GPU.tanh(GPU.add(GPU.mvMul(wgx, m: memCellCount, n: inputDim, vector: input[0]),
+      y: GPU.mvMul(wgh, m: memCellCount, n: memCellCount, vector: start)))
+    i[0] = GPU.sigmoid(GPU.add(GPU.mvMul(wix, m: memCellCount, n: inputDim, vector: input[0]),
+      y: GPU.mvMul(wih, m: memCellCount, n: memCellCount, vector: start)))
+    f[0] = GPU.sigmoid(GPU.add(GPU.mvMul(wfx, m: memCellCount, n: inputDim, vector: input[0]),
+      y: GPU.mvMul(wfh, m: memCellCount, n: memCellCount, vector: start)))
+    o[0] = GPU.sigmoid(GPU.add(GPU.mvMul(wox, m: memCellCount, n: inputDim, vector: input[0]),
+      y: GPU.mvMul(woh, m: memCellCount, n: memCellCount, vector: start)))
+    s[0] = add(GPU.mul(g[0], y: i[0]), y: mul(s[0], y: f[0]))
     h[0] = mul(s[0], y: o[0])
     y[0] = softmax(s[0])
     
     for t in 1..<T {
-      g[t] = tanh(add(mvMul(wgx, m: memCellCount, n: inputDim, x: input[t]),
-        y: mvMul(wgh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-      i[t] = mtlSigmoid(add(mvMul(wix, m: memCellCount, n: inputDim, x: input[t]),
-        y: mvMul(wih, m: memCellCount, n: memCellCount, x: h[t - 1])))
-      f[t] = mtlSigmoid(add(mvMul(wfx, m: memCellCount, n: inputDim, x: input[t]),
-        y: mvMul(wfh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-      o[t] = mtlSigmoid(add(mvMul(wox, m: memCellCount, n: inputDim, x: input[t]),
-        y: mvMul(woh, m: memCellCount, n: memCellCount, x: h[t - 1])))
-      s[t] = add(mtlMul(g[t], y: i[t]), y: mul(s[t - 1], y: f[t]))
-      h[t] = mul(s[t], y: o[t])
+      g[t] = GPU.tanh(GPU.add(GPU.mvMul(wgx, m: memCellCount, n: inputDim, vector: input[t]),
+        y: GPU.mvMul(wgh, m: memCellCount, n: memCellCount, vector: h[t - 1])))
+      i[t] = GPU.sigmoid(add(GPU.mvMul(wix, m: memCellCount, n: inputDim, vector: input[t]),
+        y: GPU.mvMul(wih, m: memCellCount, n: memCellCount, vector: h[t - 1])))
+      f[t] = GPU.sigmoid(add(GPU.mvMul(wfx, m: memCellCount, n: inputDim, vector: input[t]),
+        y: GPU.mvMul(wfh, m: memCellCount, n: memCellCount, vector: h[t - 1])))
+      o[t] = GPU.sigmoid(add(GPU.mvMul(wox, m: memCellCount, n: inputDim, vector: input[t]),
+        y: GPU.mvMul(woh, m: memCellCount, n: memCellCount, vector: h[t - 1])))
+      s[t] = GPU.add(GPU.mul(g[t], y: i[t]), y: mul(s[t - 1], y: f[t]))
+      h[t] = GPU.mul(s[t], y: o[t])
       y[t] = softmax(s[t])
     }
     return (s, y, h)
