@@ -356,11 +356,9 @@ public class FeedfowardNeuralNetwork {
       
       if (activationFunction == "sigmoid") {
         delta = GPU.mul(partialDelta, y: GPU.sigmoidPrime(z))
-      }
-      else if (activationFunction == "tangent") {
+      } else if (activationFunction == "tangent") {
         delta = GPU.mul(partialDelta, y: GPU.tanhPrime(z))
-      }
-      else {
+      } else {
         delta = GPU.mul(partialDelta, y: GPU.reluPrime(z))
       }
       
@@ -371,14 +369,28 @@ public class FeedfowardNeuralNetwork {
     return (nablaB, nablaW)
   }
   
-  //TODO: Add loss function
-  
-  /** Calculate the loss of the network
-    - Parameter:
-    - Returns:
+  /** Calculate the loss of the network using mean-squared error loss function.
+    - Parameter input: Input to the network.
+    - Parameter target: Target output from the network.
+    - Returns: The loss of the network after the given output.
   */
-  public func getLoss(input: [Float], target: [Float]) -> Float {
-    return 0.0
+  public func getMSELoss(input: [Float], target: [Float]) -> Float {
+    let activations = feedforward(input)
+    let output = activations[activations.endIndex - 1]
+    return sum(square(sub(target, y: output))) / Float(target.count)
+  }
+  
+  /** Calculate the loss of the network using cross-entropy loss function.
+   - Parameter input: Input to the network.
+   - Parameter target: Target output from the network.
+   - Returns: The loss of the network after the given output.
+   */
+  public func getCrossEntropyLoss(input: [Float], target: [Float]) -> Float {
+    let activations = feedforward(input)
+    let output = activations[activations.endIndex - 1]
+    let ones = [Float](count: target.count, repeatedValue: 1.0)
+    let part = add(mul(target, y: log(output)), y: mul(sub(ones, y: target), y: log(sub(ones, y: output))))
+    return -(sum(part) / Float(target.count))
   }
   
   /**Combine and average weights in two neural nets.
@@ -390,8 +402,8 @@ public class FeedfowardNeuralNetwork {
     
     var newWeights = [[Float]]()
     
-    for (w1, w2) in zip(weights, otherNet.weights) {
-        newWeights.append(div(add(w1, y: w2), c: 2.0))
+    for (weight1, weight2) in zip(weights, otherNet.weights) {
+        newWeights.append(div(add(weight1, y: weight2), c: 2.0))
     }
       
     weights = newWeights
