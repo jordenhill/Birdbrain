@@ -199,7 +199,7 @@ kernel void matrixvector_multiply(device float *A [[buffer(0)]],
     }
     
     threadgroup_barrier(mem_flags::mem_threadgroup);
-    
+
     if (id == 0) {
       partialDotProduct[local_id / WARP_SIZE] = warpResult;
     }

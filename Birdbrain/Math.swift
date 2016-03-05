@@ -192,10 +192,26 @@ public func neg(x: [Float]) -> [Float] {
   return results
 }
 
+/** Compute the log of each element in a vector.
+  - Parameter x: Vector x.
+  - Returns: The elementwise log of vector x.
+ */
 public func log(x: [Float]) -> [Float] {
   var result = [Float](count: x.count, repeatedValue: 0.0)
   
   vvlogf(&result, x, [Int32(x.count)])
+  
+  return result
+}
+
+/** Compute the reciprocal of each element in a vector.
+  - Parameter x: Vector x.
+  - Returns: The elementwise reciprocal of vector x.
+ */
+public func rec(x: [Float]) -> [Float] {
+  var result = [Float](count: x.count, repeatedValue: 0.0)
+  
+  vvrecf(&result, x, [Int32(x.count)])
   
   return result
 }
@@ -276,8 +292,7 @@ func relu(x: [Float]) -> [Float] {
   - Returns: A vector z = (1 / (1 + e^-x)).
 */
 func sigmoid(x: [Float]) -> [Float] {
-  let ones = [Float](count: x.count, repeatedValue: 1.0)
-  let z: [Float] =  div(ones, y: (add(exp(neg(x)), c: 1.0)))
+  let z: [Float] =  rec(add(exp(neg(x)), c: 1.0))
   
   return z
 }
@@ -332,17 +347,6 @@ func softmax(z: [Float]) -> [Float] {
   let x = exp(sub(z, c: z.maxElement()!))
   
   return div(x, c: sum(x))
-}
-
-//MARK: Cost Derivative
-
-/** Cost derivative function.
-  - Parameter output: Output of network.
-  - Parameter y: Target output.
-  - Returns a vector y' = (output - y).
-*/
-func costDerivative(output: [Float], y: [Float]) -> [Float] {
-  return sub(output, y: y)
 }
 
 /** Find max indices of each array in two-dimensional array.

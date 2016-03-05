@@ -21,7 +21,7 @@ public class FeedfowardNeuralNetwork {
     - Parameter sizes: The number of layers and size of each layer in the network.
     - Parameter useMetal: Indicate whether to use Metal functions or not.
     - Parameter activationFunction: Activation function to use 
-      (1 - Sigmoid, 2, Hyperbolic Tangent, 3 - ReLu).
+      (sigmoid, tangent, or relu).
    */
   public init (size: [Int], useMetal: Bool, activateFunction: String) {
     //Set initialization values.
@@ -131,18 +131,20 @@ public class FeedfowardNeuralNetwork {
       let n = sizes[layer]
       let m = sizes[layer - 1]
       
-      if (activationFunction == "sigmoid") { //Sigmoid
+      switch activationFunction {
+      case "sigmoid":
         activations.append(GPU.sigmoid(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
-      } else if (activationFunction == "tangent") { //Hyperbolic tangent
+      case "tangent":
         activations.append(GPU.tanh(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
-      } else if (activationFunction == "relu") { //Rectified Linear
+      case "relu":
         activations.append(GPU.relu(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
-      } else {
-        print("No appropriate activation function entered.")
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        activations.append(GPU.sigmoid(GPU.add(GPU.mvMul(w, m: m, n: n, vector: inputLayer), y: b)))
       }
       
       layer += 1
-      
       inputLayer = activations[activations.endIndex - 1]
     }
     
@@ -162,15 +164,17 @@ public class FeedfowardNeuralNetwork {
       let n = sizes[layer - 1]
       let m = sizes[layer]
       
-      if (activationFunction == "sigmoid") { //Sigmoid
+      switch activationFunction {
+      case "sigmoid":
         activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
-        print("done")
-      } else if (activationFunction == "tangent") { //Hyperbolic tangent
+      case "tangent":
         activations.append(tanh(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
-      } else if (activationFunction == "relu") { //Rectified Linear
+      case "relu":
         activations.append(relu(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
-      } else {
-        print("No appropriate activation function entered.")
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        activations.append(sigmoid(add(mvMul(w, m: m, n: n, x: inputLayer), y: b)))
       }
       
       layer += 1
@@ -220,7 +224,7 @@ public class FeedfowardNeuralNetwork {
     var n: Int
     var zVals = [[Float]]()
     var activations: [[Float]] = [input]
-    var activation = input
+    var layerInput = input
     
     for w in weights {
       nablaW.append([Float](count: w.count, repeatedValue: 0.0))
@@ -234,33 +238,57 @@ public class FeedfowardNeuralNetwork {
     for (b, w) in zip(biases, weights) {
       m = sizes[layer]
       n = sizes[layer - 1]
-      let z = add(mvMul(w, m: m, n: n, x: activation), y: b)
+      let z = add(mvMul(w, m: m, n: n, x: layerInput), y: b)
       
       zVals.append(z)
       
-      if (activationFunction == "sigmoid") {
-        activation = sigmoid(z)
-      } else if (activationFunction == "tangent") {
-        activation = tanh(z)
-      } else {
-        activation = relu(z)
+      switch activationFunction {
+      case "sigmoid":
+        layerInput = sigmoid(z)
+      case "tangent":
+        layerInput = tanh(z)
+      case "relu":
+        layerInput = relu(z)
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default")
+        activationFunction = "sigmoid"
+        layerInput = sigmoid(z)
+      }
+      
+      switch activationFunction {
+      case "sigmoid":
+        layerInput = sigmoid(z)
+      case "tangent":
+        layerInput = tanh(z)
+      case "relu":
+        layerInput = relu(z)
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        layerInput = sigmoid(z)
       }
       
       layer += 1
       
-      activations.append(activation)
+      activations.append(layerInput)
     }
     
     //Create delta for last layer based on output, do a backward pass
-    if (activationFunction == "sigmoid") {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: sigmoidPrime(zVals[zVals.endIndex - 1]))
-    } else if (activationFunction == "tangent") {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: tanhPrime(zVals[zVals.endIndex - 1]))
-    } else {
-      delta = mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: reluPrime(zVals[zVals.endIndex - 1]))
+    switch activationFunction {
+    case "sigmoid":
+      delta = mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: sigmoidPrime(zVals[zVals.endIndex - 1]))
+    case "tangent":
+      delta = mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: tanhPrime(zVals[zVals.endIndex - 1]))
+    case "relu":
+      delta = mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: reluPrime(zVals[zVals.endIndex - 1]))
+    default:
+      print("Net somehow acquired inccorect function name, using sigmoid by default.")
+      activationFunction = "sigmoid"
+      delta = mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: sigmoidPrime(zVals[zVals.endIndex - 1]))
     }
     
     nablaB[nablaB.endIndex - 1] = delta
@@ -271,12 +299,17 @@ public class FeedfowardNeuralNetwork {
       let partialDelta = mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], x: delta)
       
-      if (activationFunction == "sigmoid") {
+      switch activationFunction {
+      case "sigmoid":
         delta = mul(partialDelta, y: sigmoidPrime(z))
-      } else if (activationFunction == "tangent") {
+      case "tangent":
         delta = mul(partialDelta, y: tanhPrime(z))
-      } else {
+      case "relu":
         delta = mul(partialDelta, y: reluPrime(z))
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        delta = mul(partialDelta, y: sigmoidPrime(z))
       }
       
       nablaB[nablaB.endIndex - l] = delta
@@ -318,12 +351,17 @@ public class FeedfowardNeuralNetwork {
 
       zVals.append(z)
                 
-      if (activationFunction == "sigmoid") {
+      switch activationFunction {
+      case "sigmoid":
         layerInput = GPU.sigmoid(z)
-      } else if (activationFunction == "tangent") {
+      case "tangent":
         layerInput = GPU.tanh(z)
-      } else {
+      case "relu":
         layerInput = GPU.relu(z)
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        layerInput = GPU.sigmoid(z)
       }
             
       layer += 1
@@ -332,15 +370,21 @@ public class FeedfowardNeuralNetwork {
     }
         
     //Create delta for last layer based on output, do a backward pass
-    if (activationFunction == "sigmoid") {
-      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: GPU.sigmoidPrime(zVals[zVals.endIndex - 1]))
-    } else if (activationFunction == "tangent") {
-      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: GPU.tanhPrime(zVals[zVals.endIndex - 1]))
-    } else {
-      delta = GPU.mul(costDerivative(activations[activations.endIndex - 1], y: target),
-        y: GPU.reluPrime(zVals[zVals.endIndex - 1]))
+    switch activationFunction {
+    case "sigmoid":
+      delta = GPU.mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: GPU.sigmoidPrime(zVals[zVals.endIndex - 1]))
+    case "tangent":
+      delta = GPU.mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: GPU.tanhPrime(zVals[zVals.endIndex - 1]))
+    case "relu":
+      delta = GPU.mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: GPU.reluPrime(zVals[zVals.endIndex - 1]))
+    default:
+      print("Net somehow acquired inccorect function name, using sigmoid by default.")
+      activationFunction = "sigmoid"
+      delta = GPU.mul(sub(activations[activations.endIndex - 1], y: target),
+                  y: GPU.sigmoidPrime(zVals[zVals.endIndex - 1]))
     }
         
     nablaB[nablaB.endIndex - 1] = delta
@@ -354,12 +398,17 @@ public class FeedfowardNeuralNetwork {
       let partialDelta = GPU.mvMul(weights[weights.endIndex - l + 1], m: sizes[sizes.endIndex - l],
         n: sizes[sizes.endIndex - l + 1], vector: delta)
       
-      if (activationFunction == "sigmoid") {
+      switch activationFunction {
+      case "sigmoid":
         delta = GPU.mul(partialDelta, y: GPU.sigmoidPrime(z))
-      } else if (activationFunction == "tangent") {
+      case "tangent":
         delta = GPU.mul(partialDelta, y: GPU.tanhPrime(z))
-      } else {
+      case "relu":
         delta = GPU.mul(partialDelta, y: GPU.reluPrime(z))
+      default:
+        print("Net somehow acquired inccorect function name, using sigmoid by default.")
+        activationFunction = "sigmoid"
+        delta = GPU.mul(partialDelta, y: GPU.sigmoidPrime(z))
       }
       
       nablaB[nablaB.endIndex - l] = delta
